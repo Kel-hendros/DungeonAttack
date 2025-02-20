@@ -284,6 +284,12 @@ html {
     background: #666;
 }
 
+.card.placeholder {
+    background: transparent;
+    border: 2px dashed #555;
+    cursor: default;
+}
+
 
 .modal-monster-card,
 .modal-potion-card,
@@ -369,4 +375,27 @@ html {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+
+/* Efecto de aparecer la carta */
+@keyframes pop {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+
+    50% {
+        transform: scale(1.5);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.pop {
+    animation: pop 0.2s ease-out;
 }
