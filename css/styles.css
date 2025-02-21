@@ -143,13 +143,28 @@ html {
     height: 100vh;
 }
 
+
+.dungeon {
+    background-image: url('../assets/title.png');
+    background-size: 80%;
+    background-position: center -60px;
+    background-repeat: repeat;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
 /* Sección del Dungeon */
 .dungeon-container {
     display: flex;
+    min-width: 50%;
+    max-width: 90%;
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
-    margin: 1rem;
+    justify-content: center;
+    padding: 1rem;
+
 }
 
 .deck-pile,
@@ -189,9 +204,22 @@ html {
 
 /* Sección de la Habitación */
 .room {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1rem;
     background-color: #444;
-    padding: 1rem;
+    padding: 3rem;
     text-align: center;
+    background-image: url('../assets/dungeon-wall.png');
+    background-repeat: repeat;
+    background-size: 220px 220px;
+    background-position: center;
+    height: 100%;
+    box-shadow: inset 0px 25px 30px black;
+
+
 }
 
 .cards {
@@ -201,31 +229,29 @@ html {
     margin-top: 1rem;
 }
 
-/* Estilo para las cartas */
-/* .card {
-  background: #555;
-  width: 60px;
-  height: 90px;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-} */
+
 
 /* Sección del Jugador */
 .player {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .2rem;
     background-color: #333;
     padding: 1rem;
+    padding-top: 1.3rem;
     text-align: center;
     padding-bottom: 5rem;
+    background-image: url('../assets/satchel.png');
+    background-repeat: repeat;
+    background-size: 100%;
+    background-position: center 0px;
+    box-shadow: 0px -10px 20px black;
 }
 
-.player .equipment,
-.player .stats {
-    margin-top: 1rem;
+.stats {
+    margin-top: .1rem;
     margin-bottom: 1rem;
 }
 
@@ -235,19 +261,52 @@ html {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
+    width: 90%;
+    margin-bottom: 1.5rem;
+    margin-top: 1rem;
+
     /* Remueve la altura fija si el contenido es más grande */
     /* height: 150px; */
+}
+
+.weapon-slot,
+.armor-slot,
+.potion-slot {
+    width: 40%;
+    height: 150px;
+    background: #252424;
+    border: 2px dashed #9d6e38;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 1rem;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+    gap: .5rem;
+}
+
+.weapon-info,
+.armor-info,
+.mana-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
 }
 
 .equipped-weapon,
 .equipped-armor,
 .equipped-potion {
     /* Para que cada columna muestre sus elementos apilados verticalmente */
-    margin-top: 1rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
+    gap: 0.5rem;
 }
 
 .stats {
@@ -299,8 +358,8 @@ html {
 }
 
 .card {
-    width: 60px;
-    height: 90px;
+    width: 120px;
+    height: 180px;
     background: #555;
     border: 2px solid #535353;
     border-radius: 8px;
@@ -412,6 +471,7 @@ html {
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 60%;
 }
 
 
@@ -492,11 +552,11 @@ html {
 }
 
 .log-container {
-    /* position: fixed; */
+    position: relative;
     bottom: 0;
     left: 0;
     width: 100%;
-    max-height: 150px;
+    max-height: 100%;
     background: rgba(0, 0, 0, 0.8);
     color: #fff;
     overflow-y: auto;
@@ -504,6 +564,29 @@ html {
     font-family: monospace;
     font-size: 0.9rem;
 }
+
+
+.log-container::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 80%;
+    /* Usamos stops para controlar la transición:
+       - Comienza con rgba(0,0,0,0.6)
+       - A 50% pasa a rgba(0,0,0,0.3)
+       - Termina en transparente a 100%
+    */
+    background: linear-gradient(to top, rgb(0, 0, 0) 0%, rgba(0, 0, 0, 0.724) 50%, rgba(0, 0, 0, 0.356) 80%, transparent 100%);
+    pointer-events: none;
+}
+
+
+
+
+
+
 
 .log-container strong {
     color: red;
@@ -513,30 +596,4 @@ html {
     margin: 0.2rem 0;
     padding: 0.2rem;
     transition: color 0.3s;
-}
-
-/* El mensaje más nuevo (primer hijo, ya que invertimos el orden con reverse en updateLogUI) */
-.log-container p:nth-child(1) {
-    color: #fff;
-    font-weight: bold;
-}
-
-/* El segundo mensaje */
-.log-container p:nth-child(2) {
-    color: #ddd;
-}
-
-/* El tercer mensaje */
-.log-container p:nth-child(3) {
-    color: #bbb;
-}
-
-/* El cuarto mensaje */
-.log-container p:nth-child(4) {
-    color: #999;
-}
-
-/* El quinto (el más antiguo) */
-.log-container p:nth-child(5) {
-    color: #777;
 }

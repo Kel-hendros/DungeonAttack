@@ -66,6 +66,9 @@ function drawCard(
     case "spell":
       emoji = "🔮";
       break;
+    case "mana":
+      emoji = "🌀";
+      break;
     default:
       emoji = "❓";
   }
@@ -119,7 +122,6 @@ function drawRoom() {
   }
 
   roomEl.innerHTML = `
-    <h2>Habitación</h2>
     <div class="cards">${slotsHtml}</div>
   `;
 
@@ -192,7 +194,7 @@ function drawPlayer() {
       </div>
     `;
   } else {
-    weaponHtml = "-";
+    weaponHtml = "";
   }
 
   // Dibujo de la pila de monstruos derrotados
@@ -217,41 +219,54 @@ function drawPlayer() {
     </div>
   `;
   } else {
-    armorHtml = "-";
+    armorHtml = "";
   }
 
   // Dibujo el Mana equipado
   // "Poción" convertida a Mana: si gameState.mana > 0, mostramos una "carta" ficticia de Mana
   const effectiveMana = gameState.mana + gameState.playerStats.intelligence;
+  const manaCard = {
+    id: 0,
+    name: "Mana",
+    value: effectiveMana,
+    type: "mana",
+  };
   const manaHtml =
     effectiveMana > 0
-      ? `<div class="mana-info equipped">
-         <div class="mana-card">
-         <p class="mana-label">🌀</p>
-           <span class="mana-value">${effectiveMana}</span>
-         </div>
-         </div>
-         <span class="formula">(${gameState.mana} + ${gameState.playerStats.intelligence})</span>
+      ? `<div class="mana-info">
+         ${drawCard(manaCard, 0, "equipped", false)}
+         <p class="mana-value">
+         <span class="formula">(${gameState.mana} + ${
+          gameState.playerStats.intelligence
+        })</span>
+        </p>
+        </div>
        `
-      : "-";
+      : "";
 
   playerEl.innerHTML = `
       <h2>Personaje</h2>
       <div class="equipment">
         <div class="equipped-weapon">
             <p>Armamento</p>
+            <div class="weapon-slot">
             <p>${weaponHtml}</p>
+            </div>
             <div class="defeated-monsters">
             ${defeatedMonstersHtml}
             </div>
         </div>
         <div class="equipped-armor">
             <p>Protección</p>
+            <div class="armor-slot">
             <p>${armorHtml}</p>
+            </div>
         </div>
         <div class="equipped-potion">
             <p>Mana</p>
+            <div class="potion-slot">
            <p>${manaHtml}</p>
+           </div>
         </div>
       </div>
       <div class="stats">
