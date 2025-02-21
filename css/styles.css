@@ -18,11 +18,15 @@ html {
     align-items: center;
     justify-content: center;
     height: 100%;
+    background-image: url('../assets/dungeon-wall.png');
+    background-repeat: repeat;
+    background-size: 50%;
+    background-position: center;
 }
 
 .title {
     font-size: 4rem;
-    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+    text-shadow: 0px 3px 10px rgba(250, 0, 0, 0.89);
     margin-bottom: 2rem;
     /* Opcional: animación de entrada */
     animation: fadeIn 1.5s ease-out;
@@ -38,6 +42,7 @@ html {
     cursor: pointer;
     transition: background 0.3s;
     margin-bottom: 1rem;
+    box-shadow: 0px 5px 25px rgba(0, 0, 0, 0.824);
 }
 
 .continue-btn {
@@ -54,6 +59,7 @@ html {
 .start-btn:hover,
 .continue-btn:hover {
     background: #666;
+    box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.824);
 }
 
 /* Animación opcional */
