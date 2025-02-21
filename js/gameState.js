@@ -5,10 +5,11 @@ const gameState = {
   roomSize: 5, // Numero de cartas por habitación
   playerStats: {
     // Estadísticas del jugador
-    strength: 2, // Influye en el daño de las armas
+    strength: 0, // Influye en el daño de las armas
     constitution: 0, // Influye en el Max de Salud
     intelligence: 0, // Influye en el daño de los hechizos
   },
+  mana: 0,
   playerEquipment: {
     // Equipamiento actual del jugador
     weapon: null,
@@ -27,11 +28,13 @@ const gameState = {
   dungeonDeck: [], // Mazo del dungeon completo
   discardPile: [], // Pila de descarte para las cartas usadas o vencidas
   playerHealth: {
-    current: 100,
-    max: 100,
-    prev: 100,
+    current: 20,
+    max: 20,
+    prev: 20,
   },
   newIndexes: [],
+  inTargetSelection: false,
+  log: [],
 };
 
 function resetGameState() {
@@ -43,16 +46,17 @@ function resetGameState() {
     intelligence: 0,
   };
   gameState.playerHealth = {
-    current: 100,
-    max: 100,
-    prev: 100,
+    current: 20,
+    max: 20,
+    prev: 20,
   };
-  playerEquipment = {
+  gameState.mana = 0;
+  gameState.playerEquipment = {
     weapon: null,
     armor: null,
     potion: null,
   };
-  newEquipment = {
+  gameState.newEquipment = {
     weapon: false,
     armor: false,
     potion: false,
@@ -64,6 +68,37 @@ function resetGameState() {
   gameState.cardsRemaining = 0;
   gameState.discardPile = [];
   gameState.newIndexes = [];
+  gameState.inTargetSelection = false;
+  gameState.log = [];
 }
 
 export { gameState, resetGameState };
+
+export function saveGameState() {
+  try {
+    localStorage.setItem("dungeonAttackState", JSON.stringify(gameState));
+    console.log("Estado del juego guardado.");
+  } catch (error) {
+    console.error("Error al guardar el estado:", error);
+  }
+}
+
+export function loadGameState() {
+  try {
+    const storedState = localStorage.getItem("dungeonAttackState");
+    if (storedState) {
+      const parsedState = JSON.parse(storedState);
+      // Actualizamos el gameState con los valores guardados.
+      // Usamos Object.assign para actualizar solo las propiedades.
+      Object.assign(gameState, parsedState);
+      console.log("Estado del juego cargado.");
+      return true;
+    } else {
+      console.log("No hay estado guardado.");
+      return false;
+    }
+  } catch (error) {
+    console.error("Error al cargar el estado:", error);
+    return false;
+  }
+}

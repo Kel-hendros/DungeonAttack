@@ -29,6 +29,7 @@ html {
 }
 
 .start-btn {
+    width: 15rem;
     padding: 1rem 2rem;
     font-size: 1.5rem;
     background: #444;
@@ -36,9 +37,22 @@ html {
     border-radius: 8px;
     cursor: pointer;
     transition: background 0.3s;
+    margin-bottom: 1rem;
 }
 
-.start-btn:hover {
+.continue-btn {
+    width: 15rem;
+    padding: 1rem 2rem;
+    font-size: 1.5rem;
+    background: #8a8a8a;
+    border: 2px solid #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.start-btn:hover,
+.continue-btn:hover {
     background: #666;
 }
 
@@ -53,6 +67,72 @@ html {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+
+/* Sección para la pila de monstruos derrotados */
+.defeated-monsters {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    box-shadow: inset 0px 5px 20px black;
+    border-radius: 15px;
+    padding: 10px;
+}
+
+/* Contenedor donde se apilan las cartas */
+.monster-stack {
+    position: relative;
+    /* Importante para que las cartas se posicionen absolutas respecto a este contenedor */
+    width: 100px;
+    /* Ajustá según cuántas cartas quieras superponer */
+    height: 120px;
+    /* Alto de una carta */
+}
+
+/* Cada carta se posiciona absoluta y se superpone */
+.card.stack-card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    /* El último elemento en el DOM quedará encima por defecto,
+     o podés usar z-index si lo necesitás */
+}
+
+/* Las cartas “mini” de abajo muestran solo la esquina superior */
+.mini-card {
+    position: absolute;
+
+    z-index: 1;
+    width: 60px;
+    height: 90px;
+    background: #1a0000;
+    border: 1px solid #6d6d6d;
+    border-radius: 5px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    font-size: 1.5rem;
+    opacity: 0.8;
+    padding-top: 3px;
+    padding-left: 5px;
+    box-shadow: -2px 0px 5px rgba(0, 0, 0, 0.383);
+}
+
+/* La carta superior se muestra completa y por encima */
+.card.stack-top {
+    position: absolute;
+    top: 0;
+    left: 23px;
+    z-index: 2;
+    /* Más alto que las mini-cards */
+    width: 60px;
+    height: 90px;
+    border: 1px solid #6d6d6d;
+    border-radius: 8px;
+    box-shadow: -2px 0px 5px rgba(0, 0, 0, 0.383);
 }
 
 
@@ -140,6 +220,7 @@ html {
     background-color: #333;
     padding: 1rem;
     text-align: center;
+    padding-bottom: 5rem;
 }
 
 .player .equipment,
@@ -177,51 +258,7 @@ html {
 }
 
 
-/* Sección para la pila de monstruos derrotados */
-.defeated-monsters {
-    margin-top: 1rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
 
-/* Contenedor del stack */
-.monster-stack {
-    position: relative;
-    width: 80px;
-    height: 120px;
-}
-
-/* Carta en el stack (apiladas) */
-.stack-card {
-    position: absolute;
-    top: 0;
-    left: 0;
-}
-
-/* Mini versión: solo se ve el valor */
-.mini-card {
-    width: 80px;
-    height: 120px;
-    background: #333;
-    border: 1px solid #fff;
-    border-radius: 5px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    opacity: 0.8;
-}
-
-/* La carta superior se muestra completa */
-.stack-top {
-    /* Puedes copiar estilos de .card o definir estilos propios */
-    width: 80px;
-    height: 120px;
-    border: 2px solid #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-}
 
 /* MODAL */
 .modal {
@@ -398,4 +435,108 @@ html {
 
 .pop {
     animation: pop 0.2s ease-out;
+}
+
+
+
+.spell-target-container {
+    display: none;
+    /* Se mostrará cuando se active el selector */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1rem;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 10px;
+    z-index: 100;
+}
+
+.target-indicators {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 0.5rem;
+}
+
+.target-indicator {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    background: #333;
+}
+
+.target-indicator.active {
+    background: #0f0;
+}
+
+.spell-target-container button {
+    padding: 0.5rem 1rem;
+    background: #444;
+    border: none;
+    border-radius: 5px;
+    color: #fff;
+    cursor: pointer;
+}
+
+.card.dimmed {
+    opacity: 0.3;
+}
+
+.card.selectable {
+    cursor: pointer;
+}
+
+.card.selectable.selected {
+    outline: 2px solid #0f0;
+}
+
+.log-container {
+    /* position: fixed; */
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    max-height: 150px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    overflow-y: auto;
+    padding: 0.5rem;
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+
+.log-container strong {
+    color: red;
+}
+
+.log-container p {
+    margin: 0.2rem 0;
+    padding: 0.2rem;
+    transition: color 0.3s;
+}
+
+/* El mensaje más nuevo (primer hijo, ya que invertimos el orden con reverse en updateLogUI) */
+.log-container p:nth-child(1) {
+    color: #fff;
+    font-weight: bold;
+}
+
+/* El segundo mensaje */
+.log-container p:nth-child(2) {
+    color: #ddd;
+}
+
+/* El tercer mensaje */
+.log-container p:nth-child(3) {
+    color: #bbb;
+}
+
+/* El cuarto mensaje */
+.log-container p:nth-child(4) {
+    color: #999;
+}
+
+/* El quinto (el más antiguo) */
+.log-container p:nth-child(5) {
+    color: #777;
 }

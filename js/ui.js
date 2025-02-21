@@ -1,27 +1,38 @@
-import { generateRoomCards } from "./gameLogic.js";
-import { gameState } from "./gameState.js";
+import { loadGameState, gameState } from "./gameState.js";
 import { cardData } from "../data/cards.js";
-import { processCard } from "./gameLogic.js";
+import { processCard, generateRoomCards } from "./gameLogic.js";
+
+// Cargar el estado guardado o comenzar de 0
+document.addEventListener("DOMContentLoaded", () => {
+  if (localStorage.getItem("dungeonAttackState")) {
+    console.log("Cargando estado guardado...");
+    loadGameState(); // Actualiza gameState con el estado guardado
+  } else {
+    console.log("No se encontró estado guardado, iniciando juego nuevo...");
+    generateRoomCards();
+  }
+  drawUI();
+  updateUI();
+});
 
 function updateUI() {
   drawDungeon();
-  drawRoom();
+  if (!gameState.inTargetSelection) {
+    drawRoom();
+  }
   drawPlayer();
   updateHealthBar();
+  console.log("[updateUI] Player health:", gameState.playerHealth.current);
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-  // Inicializamos la partida y generamos las cartas del room
-  generateRoomCards();
-  drawUI();
-});
 
 function drawUI() {
   const app = document.getElementById("app");
   app.innerHTML = `
     <div id="dungeon" class="dungeon"></div>
     <div id="room" class="room"></div>
+    <div id="spellTargetContainer" class="spell-target-container" style="display: none;"></div>
     <div id="player" class="player"></div>
+    <div id="logContainer" class="log-container"></div>
   `;
 
   drawDungeon();
@@ -76,6 +87,7 @@ function drawDungeon() {
         </div>
         <div class="dungeon-title">
           <h2>Dungeon Attack!</h2>
+          <button id="backBtn">Volver</button>
         </div>
         <div class="discard-pile">
           <div class="card-back">
@@ -84,6 +96,12 @@ function drawDungeon() {
         </div>
       </div>
     `;
+  const backBtn = document.getElementById("backBtn");
+  if (backBtn) {
+    backBtn.addEventListener("click", () => {
+      window.location.href = "index.html";
+    });
+  }
 }
 
 function drawRoom() {
@@ -141,6 +159,9 @@ function findCardById(id, type) {
 
 function drawPlayer() {
   const playerEl = document.getElementById("player");
+  // Actualizamos la salud en base a la constitución
+  gameState.playerHealth.max =
+    gameState.playerHealth.max + gameState.playerStats.constitution * 5;
 
   // Barra de vida
   const healthBarHTML = `
@@ -177,15 +198,42 @@ function drawPlayer() {
   // Dibujo de la pila de monstruos derrotados
   const defeatedMonstersHtml = drawDefeatedMonsters();
 
-  // Dibujo de la armadura equipada
-  const armorHtml = gameState.playerEquipment.armor
-    ? drawCard(gameState.playerEquipment.armor, 0, "equipped", false)
-    : "-";
+  let armorHtml;
+  if (gameState.playerEquipment.armor) {
+    const baseArmor = gameState.playerEquipment.armor.value;
+    const currentArmor = gameState.currentArmorValue; // Este valor se actualiza en combate
+    armorHtml = `
+    <div class="armor-info">
+      ${drawCard(
+        gameState.playerEquipment.armor,
+        0,
+        "equipped",
+        false,
+        currentArmor
+      )}
+      <p class="armor-value">
+        <span class="formula">(${baseArmor} → ${currentArmor})</span>
+      </p>
+    </div>
+  `;
+  } else {
+    armorHtml = "-";
+  }
 
   // Dibujo el Mana equipado
-  const manaHtml = gameState.playerEquipment.potion
-    ? drawCard(gameState.playerEquipment.potion, 0, "equipped", false)
-    : "-";
+  // "Poción" convertida a Mana: si gameState.mana > 0, mostramos una "carta" ficticia de Mana
+  const effectiveMana = gameState.mana + gameState.playerStats.intelligence;
+  const manaHtml =
+    effectiveMana > 0
+      ? `<div class="mana-info equipped">
+         <div class="mana-card">
+         <p class="mana-label">🌀</p>
+           <span class="mana-value">${effectiveMana}</span>
+         </div>
+         </div>
+         <span class="formula">(${gameState.mana} + ${gameState.playerStats.intelligence})</span>
+       `
+      : "-";
 
   playerEl.innerHTML = `
       <h2>Personaje</h2>
@@ -353,7 +401,8 @@ function updateHealthBar() {
   const healthBarInner = document.getElementById("healthBarInner");
   const healthText = document.getElementById("healthText");
   const current = gameState.playerHealth.current;
-  const max = gameState.playerHealth.max;
+  const max =
+    gameState.playerHealth.max + gameState.playerStats.constitution * 5;
   const percent = Math.max(0, Math.min(100, (current / max) * 100));
 
   // Actualizamos el width
@@ -373,13 +422,154 @@ function updateHealthBar() {
   console.log(gameState.playerHealth.prev);
 }
 
-// animacion de nueva carta en la mesa
-function applyPopAnimation(selector) {
-  const elements = document.querySelectorAll(selector);
-  elements.forEach((el) => {
-    el.classList.add("pop");
-    setTimeout(() => {
-      el.classList.remove("pop");
-    }, 500); // tiempo en milisegundos igual a la duración de la animación
+export function showSpellTargetSelector(targetCount) {
+  return new Promise((resolve) => {
+    console.log(
+      "[Selector] Iniciando showSpellTargetSelector con targetCount:",
+      targetCount
+    );
+    // Activamos el modo selección para que processCard lo ignore.
+    gameState.inTargetSelection = true;
+
+    // Obtenemos el contenedor "dock" ya definido debajo del room.
+    const dock = document.getElementById("spellTargetContainer");
+    dock.style.display = "flex";
+
+    // Creamos indicadores: tantos círculos como objetivos se deben seleccionar.
+    let indicatorsHTML = "";
+    for (let i = 0; i < targetCount; i++) {
+      indicatorsHTML += `<div class="target-indicator"></div>`;
+    }
+
+    // Insertamos en el dock los indicadores y el botón de confirmación.
+    dock.innerHTML = `
+      <div class="target-indicators">${indicatorsHTML}</div>
+      <button id="confirmTargets" disabled>Confirmar objetivos</button>
+    `;
+    console.log("[Selector] Dock configurado con indicadores:", indicatorsHTML);
+
+    // Seleccionamos todas las cartas del room.
+    const roomCards = document.querySelectorAll("#room .card");
+    console.log("[Selector] Total de cartas en room:", roomCards.length);
+
+    // Oscurecemos (dim) las cartas que no son monstruos.
+    roomCards.forEach((cardEl, i) => {
+      const type = cardEl.getAttribute("data-type");
+      console.log(`[Selector] Procesando carta en slot ${i} - tipo: ${type}`);
+      if (type !== "monster") {
+        cardEl.classList.add("dimmed");
+        cardEl.style.pointerEvents = "none";
+        console.log(`[Selector] Slot ${i} oscurecido (no es monstruo)`);
+      } else {
+        // Para las de tipo "monster", nos aseguramos que estén habilitadas para seleccionar.
+        cardEl.classList.add("selectable");
+        cardEl.style.pointerEvents = "auto";
+        console.log(
+          `[Selector] Slot ${i} habilitado para selección (monstruo)`
+        );
+      }
+    });
+
+    // Obtenemos únicamente las cartas de monstruo (ya que son las seleccionables).
+    const monsterCards = document.querySelectorAll(
+      "#room .card[data-type='monster']"
+    );
+    console.log(
+      "[Selector] Total de cartas de monstruo seleccionables:",
+      monsterCards.length
+    );
+
+    // Creamos un Set para almacenar los índices seleccionados.
+    const selectedIndices = new Set();
+
+    // Función para actualizar los indicadores y el botón de confirmación.
+    function updateDockIndicators() {
+      const indicators = dock.querySelectorAll(".target-indicator");
+      console.log(
+        "[Selector] Actualizando indicadores. Indices seleccionados:",
+        Array.from(selectedIndices)
+      );
+      indicators.forEach((indicator, i) => {
+        if (i < selectedIndices.size) {
+          indicator.classList.add("active");
+        } else {
+          indicator.classList.remove("active");
+        }
+      });
+      const confirmBtn = dock.querySelector("#confirmTargets");
+      confirmBtn.disabled = selectedIndices.size !== targetCount;
+      console.log(
+        "[Selector] Botón Confirmar:",
+        confirmBtn.disabled ? "Deshabilitado" : "Habilitado"
+      );
+    }
+
+    // Función que se ejecuta cuando se hace clic en una carta de monstruo.
+    function onMonsterSelect(e) {
+      e.stopPropagation();
+      const cardEl = e.currentTarget;
+      const idx = parseInt(cardEl.getAttribute("data-index"));
+      console.log("[Selector] Click en carta de monstruo en slot:", idx);
+      if (selectedIndices.has(idx)) {
+        selectedIndices.delete(idx);
+        cardEl.classList.remove("selected");
+        console.log("[Selector] Deseleccionado slot:", idx);
+      } else {
+        if (selectedIndices.size < targetCount) {
+          selectedIndices.add(idx);
+          cardEl.classList.add("selected");
+          console.log("[Selector] Seleccionado slot:", idx);
+        } else {
+          console.log(
+            "[Selector] Límite de selección alcanzado. No se puede seleccionar slot:",
+            idx
+          );
+        }
+      }
+      updateDockIndicators();
+    }
+
+    // Asignamos event listeners a las cartas de monstruo.
+    monsterCards.forEach((cardEl) => {
+      cardEl.addEventListener("click", onMonsterSelect);
+    });
+
+    // Listener para el botón de confirmar.
+    const confirmBtn = dock.querySelector("#confirmTargets");
+    confirmBtn.addEventListener("click", () => {
+      console.log(
+        "[Selector] Confirmar objetivos clickeado. Indices seleccionados:",
+        Array.from(selectedIndices)
+      );
+      // Restauramos la interactividad de todas las cartas del room.
+      roomCards.forEach((cardEl) => {
+        cardEl.classList.remove("dimmed", "selectable", "selected");
+        cardEl.style.pointerEvents = "auto";
+        cardEl.removeEventListener("click", onMonsterSelect);
+      });
+      // Ocultamos el dock y desactivamos el modo selección.
+      dock.style.display = "none";
+      gameState.inTargetSelection = false;
+      // Devolvemos los índices seleccionados.
+      resolve(Array.from(selectedIndices));
+      console.log(
+        "[Selector] Selector finalizado, se resolvió la promesa con índices:",
+        Array.from(selectedIndices)
+      );
+    });
+
+    console.log(
+      "[Selector] showSpellTargetSelector finalizó su configuración."
+    );
   });
+}
+
+export function updateLogUI() {
+  const logContainer = document.getElementById("logContainer");
+  // Usamos slice() para crear una copia y luego reverse() para invertir el orden
+  logContainer.innerHTML = gameState.log
+    .slice()
+    .reverse()
+    .map((action) => `<p>${action}</p>`)
+    .join("");
 }
