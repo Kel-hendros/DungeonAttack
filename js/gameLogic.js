@@ -1,7 +1,7 @@
 import { cardData, decks } from "../data/cards.js";
 import { saveGameState } from "./gameState.js";
 import { gameState } from "./gameState.js";
-import { showModal } from "./ui.js";
+import { showModal, showGameOverModal } from "./ui.js";
 import { showSpellTargetSelector } from "./ui.js";
 import { updateLogUI } from "./ui.js";
 
@@ -28,7 +28,7 @@ export function initializeDungeonDeck() {
       // Clonamos la carta y le asignamos un ID único:
       const newCard = {
         ...availableCards[randomIndex],
-        id: generateUniqueId(),
+        instanceId: generateUniqueId(),
       };
       fullDeck.push(newCard);
     }
@@ -498,4 +498,30 @@ export function logAction(message) {
   }
   // Actualizar la UI del log
   updateLogUI();
+}
+
+// Función para verificar si se alcanzó el Game Over
+export function checkGameOver() {
+  if (gameState.playerHealth.current <= 0) {
+    console.log("Game Over detectado.");
+    // Recopilamos algunas estadísticas del juego
+    const dungeonsVisited = gameState.visitedDungeons || 0;
+    const currentTier = gameState.deckTier;
+    const cardsRemaining = gameState.dungeonDeck.length;
+    const cardsPlayed = gameState.discardPile.length;
+    const bestWeapon =
+      gameState.discardPile
+        .filter((card) => card.type === "weapon")
+        .sort((a, b) => b.value - a.value)[0] || null;
+    const bestArmor =
+      gameState.discardPile
+        .filter((card) => card.type === "armor")
+        .sort((a, b) => b.value - a.value)[0] || null;
+    showGameOverModal({
+      dungeonsVisited,
+      currentTier,
+      cardsRemaining,
+      cardsPlayed,
+    });
+  }
 }

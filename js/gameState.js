@@ -3,6 +3,7 @@ const gameState = {
   deckKey: "starter", // Identifica el mazo actual, por ejemplo "starter"
   deckTier: 1, // Indica el tier del mazo, que puede incrementarse al mejorar
   roomSize: 5, // Numero de cartas por habitación
+  visitedDungeons: 1, // Cantidad de dungeons visitados
   playerStats: {
     // Estadísticas del jugador
     strength: 0, // Influye en el daño de las armas
@@ -40,6 +41,7 @@ const gameState = {
 function resetGameState() {
   gameState.deckKey = "starter";
   gameState.deckTier = 1;
+  gameState.visitedDungeons = 1;
   gameState.playerStats = {
     strength: 0,
     constitution: 0,

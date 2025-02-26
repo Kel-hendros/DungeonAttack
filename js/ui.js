@@ -1,6 +1,6 @@
-import { loadGameState, gameState } from "./gameState.js";
+import { loadGameState, resetGameState, gameState } from "./gameState.js";
 import { cardData } from "../data/cards.js";
-import { processCard, generateRoomCards } from "./gameLogic.js";
+import { processCard, generateRoomCards, checkGameOver } from "./gameLogic.js";
 
 // Cargar el estado guardado o comenzar de 0
 document.addEventListener("DOMContentLoaded", () => {
@@ -46,22 +46,25 @@ function drawCard(
   index,
   extraClass = "",
   includeDefault = true,
-  overrideValue = null
+  overrideValue = null,
+  overrideType = null
 ) {
+  // Determinamos el tipo a usar (overrideType si se pasa, o el original)
+  const newType = overrideType !== null ? overrideType : card.type;
   let baseClass = includeDefault ? "card" : "";
   let emoji = "";
-  switch (card.type) {
+  switch (newType) {
     case "monster":
-      emoji = "👹";
+      emoji = "💀";
       break;
     case "weapon":
-      emoji = "🗡️";
+      emoji = "⚔️";
       break;
     case "armor":
       emoji = "🛡️";
       break;
     case "potion":
-      emoji = "💊";
+      emoji = "🏺";
       break;
     case "spell":
       emoji = "🔮";
@@ -72,11 +75,28 @@ function drawCard(
     default:
       emoji = "❓";
   }
-  // Si se pasa overrideValue, se muestra en lugar de card.value
   const displayValue = overrideValue !== null ? overrideValue : card.value;
-  return `<div class="${baseClass} ${extraClass}" data-index="${index}" data-id="${card.id}" data-type="${card.type}" data-value="${card.value}">
-            ${emoji}<span>${displayValue}</span>
-          </div>`;
+  const isPlaceholder = extraClass.includes("placeholder");
+  return `<div class="${baseClass} ${extraClass}" data-index="${index}" data-id="${
+    card.id
+  }" data-type="${card.type}" data-value="${card.value}">
+    
+    <div class="card-content">
+      <div class="card-header">
+        <span class="card-value">${displayValue}</span>  
+      </div>
+      <div class="card-image">
+        <img src="assets/cards/${card.id}.png" alt="${
+    card.name
+  }" onerror="this.style.display='none';" />
+      </div>
+      <div class="card-footer">
+        <span class="card-emoji">${emoji}</span>
+        <div class="card-name">${card.name}</div>
+      </div>
+    </div>
+    ${isPlaceholder ? "" : '<div class="card-frame"></div>'}
+  </div>`;
 }
 
 function drawDungeon() {
@@ -85,7 +105,9 @@ function drawDungeon() {
       <div class="dungeon-container">
         <div class="deck-pile">
           <div class="card-back">
-            <span class="card-count">${gameState.dungeonDeck.length}</span>
+            <div class="count-background">
+              <span class="card-count">${gameState.dungeonDeck.length}</span>
+            </div>
           </div>
         </div>
         <div class="dungeon-title">
@@ -94,7 +116,9 @@ function drawDungeon() {
         </div>
         <div class="discard-pile">
           <div class="card-back">
-            <span class="card-count">${gameState.discardPile.length}</span>
+            <div class="count-background">
+              <span class="card-count">${gameState.discardPile.length}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -117,7 +141,7 @@ function drawRoom() {
     if (card) {
       slotsHtml += drawCard(card, i);
     } else {
-      slotsHtml += `<div class="card placeholder" data-index="${i}"></div>`;
+      slotsHtml += `<div class="card-placeholder" data-index="${i}"></div>`;
     }
   }
 
@@ -185,12 +209,10 @@ function drawPlayer() {
           gameState.playerEquipment.weapon,
           0,
           "equipped",
-          false,
+          true,
           effectiveValue
         )}
-        <p class="weapon-value">
-          <span class="formula">(${baseValue} + ${strength})</span>
-        </p>
+        
       </div>
     `;
   } else {
@@ -210,12 +232,10 @@ function drawPlayer() {
         gameState.playerEquipment.armor,
         0,
         "equipped",
-        false,
+        true,
         currentArmor
       )}
-      <p class="armor-value">
-        <span class="formula">(${baseArmor} → ${currentArmor})</span>
-      </p>
+      
     </div>
   `;
   } else {
@@ -245,15 +265,17 @@ function drawPlayer() {
       : "";
 
   playerEl.innerHTML = `
-      <h2>Personaje</h2>
+      
       <div class="equipment">
         <div class="equipped-weapon">
             <p>Armamento</p>
-            <div class="weapon-slot">
-            <p>${weaponHtml}</p>
-            </div>
-            <div class="defeated-monsters">
-            ${defeatedMonstersHtml}
+            <div class="weapon-group">
+              <div class="weapon-slot">
+                <p>${weaponHtml}</p>
+              </div>
+              <div class="defeated-monsters">
+                ${defeatedMonstersHtml}
+              </div>
             </div>
         </div>
         <div class="equipped-armor">
@@ -322,13 +344,17 @@ function drawDefeatedMonsters() {
   }
 
   let html = `<div class="monster-stack">`;
+  // Limitar el número de cartas a 5
+  const maxCards = 5;
+  const cardsToShow = gameState.weaponDefeatedMonsters.slice(-maxCards);
+
   // Recorremos la pila. A todos excepto el último se les muestra solo el valor (mini-card)
-  gameState.weaponDefeatedMonsters.forEach((card, index) => {
-    if (index < gameState.weaponDefeatedMonsters.length - 1) {
-      html += `<div class="stack-card mini-card"><span>${card.value}</span></div>`;
+  cardsToShow.forEach((card, index) => {
+    if (index < cardsToShow.length - 1) {
+      html += drawCard(card, 0, "stack-top", false);
     } else {
       // La última carta se muestra completa usando drawCard con una clase extra para el stack
-      html += drawCard(card, 0, "stack-top");
+      html += drawCard(card, 0, "stack-top", false);
     }
   });
   html += `</div>`;
@@ -412,6 +438,7 @@ export function showModal(modalType, options = {}) {
     });
   });
 }
+
 function updateHealthBar() {
   const healthBarInner = document.getElementById("healthBarInner");
   const healthText = document.getElementById("healthText");
@@ -435,6 +462,7 @@ function updateHealthBar() {
   //actualizamos el valor previo
   gameState.playerHealth.prev = current;
   console.log(gameState.playerHealth.prev);
+  checkGameOver();
 }
 
 export function showSpellTargetSelector(targetCount) {
@@ -587,4 +615,41 @@ export function updateLogUI() {
     .reverse()
     .map((action) => `<p>${action}</p>`)
     .join("");
+}
+
+export function showGameOverModal({
+  dungeonsVisited,
+  currentTier,
+  cardsRemaining,
+  cardsPlayed,
+}) {
+  const modal = document.getElementById("gameModal");
+  const modalContent = document.getElementById("modalContent");
+  modalContent.classList.add("game-over");
+
+  // Construimos el HTML del modal de Game Over
+  const modalHtml = `
+  <div class="game-over-title">
+      
+    <h3>💀 Derrota! 💀</h3>
+  </div>
+  <div class="game-over-stats">
+    <p><strong>Dungeons explorados:</strong> ${dungeonsVisited}</p>
+    <p><strong>Tier alcanzado:</strong> ${currentTier}</p>
+    <p><strong>Cartas en el Dungeon:</strong> ${cardsRemaining}</p>
+    <p><strong>Cartas jugadas:</strong> ${cardsPlayed}</p>
+  </div>
+    <div class="game-over-button" id="newGameBtn">Nuevo Juego</div>
+  `;
+  modalContent.innerHTML = modalHtml;
+  modal.style.display = "flex";
+
+  // Agregar listener para el botón "Nuevo juego"
+  document.getElementById("newGameBtn").addEventListener("click", () => {
+    // Reiniciamos el estado: borramos el estado guardado y reseteamos gameState
+    localStorage.removeItem("dungeonAttackState");
+    resetGameState();
+    // Redirigimos al index (o donde inicie un nuevo juego)
+    window.location.href = "game.html";
+  });
 }

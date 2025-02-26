@@ -1,3 +1,7 @@
+:root {
+    --cardColor: rgb(0, 0, 0);
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -76,70 +80,6 @@ html {
 }
 
 
-/* Sección para la pila de monstruos derrotados */
-.defeated-monsters {
-    margin-top: 1rem;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    width: 100%;
-    box-shadow: inset 0px 5px 20px black;
-    border-radius: 15px;
-    padding: 10px;
-}
-
-/* Contenedor donde se apilan las cartas */
-.monster-stack {
-    position: relative;
-    /* Importante para que las cartas se posicionen absolutas respecto a este contenedor */
-    width: 100px;
-    /* Ajustá según cuántas cartas quieras superponer */
-    height: 120px;
-    /* Alto de una carta */
-}
-
-/* Cada carta se posiciona absoluta y se superpone */
-.card.stack-card {
-    position: absolute;
-    top: 0;
-    left: 0;
-    /* El último elemento en el DOM quedará encima por defecto,
-     o podés usar z-index si lo necesitás */
-}
-
-/* Las cartas “mini” de abajo muestran solo la esquina superior */
-.mini-card {
-    position: absolute;
-
-    z-index: 1;
-    width: 60px;
-    height: 90px;
-    background: #1a0000;
-    border: 1px solid #6d6d6d;
-    border-radius: 5px;
-    display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
-    font-size: 1.5rem;
-    opacity: 0.8;
-    padding-top: 3px;
-    padding-left: 5px;
-    box-shadow: -2px 0px 5px rgba(0, 0, 0, 0.383);
-}
-
-/* La carta superior se muestra completa y por encima */
-.card.stack-top {
-    position: absolute;
-    top: 0;
-    left: 23px;
-    z-index: 2;
-    /* Más alto que las mini-cards */
-    width: 60px;
-    height: 90px;
-    border: 1px solid #6d6d6d;
-    border-radius: 8px;
-    box-shadow: -2px 0px 5px rgba(0, 0, 0, 0.383);
-}
 
 
 /* Contenedor general del juego */
@@ -180,21 +120,49 @@ html {
     position: relative;
 }
 
+.count-background {
+    max-width: 95%;
+    background: #00000000;
+    border-radius: 10%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+}
+
 .card-back {
     width: 100%;
     height: 100%;
     background: #555;
     /* O podés usar una imagen de reverso de carta: url('assets/card-back.png') */
+    background-image: url('../assets/dungeonBackground/2.png');
+    background-size: 105%;
+    background-position: center;
+    background-repeat: no-repeat;
+    border: 2px solid #2c0101;
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
+
 }
+
+.deck-pile .card-back {
+    transform: rotate(-5deg);
+    box-shadow: -5px 5px 5px rgba(0, 0, 0, 0.845);
+}
+
+.discard-pile .card-back {
+    transform: rotate(7deg);
+    box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.845);
+}
+
 
 .card-count {
     font-size: 2rem;
     color: #fff;
     font-weight: bold;
+    margin-inline: 10px;
 }
 
 .dungeon-title {
@@ -216,7 +184,7 @@ html {
     justify-content: flex-start;
     gap: 1rem;
     background-color: #444;
-    padding: 3rem;
+    padding: 2rem;
     text-align: center;
     background-image: url('../assets/dungeon-wall.png');
     background-repeat: repeat;
@@ -228,11 +196,150 @@ html {
 
 }
 
+/* Cards Styles */
+
 .cards {
     display: flex;
     justify-content: center;
     gap: 1rem;
     margin-top: 1rem;
+}
+
+.card {
+    /* Quitamos bordes y fondo para que no interfieran con el marco */
+    border: none;
+    background: transparent;
+    width: 220px;
+    height: 290px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 5%;
+    cursor: pointer;
+    transition: transform 0.3s;
+    box-shadow: 3px 15px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Contenedor interno para el contenido de la carta */
+.card-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    z-index: 1;
+}
+
+/* Pseudo-elemento para el marco */
+.card-content::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* La imagen del marco, que debe tener partes transparentes para ver el contenido */
+    background: url('../assets/cards/cardFrame.png') no-repeat center center;
+    background-size: cover;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.card-header {
+    font-size: 1.2rem;
+    z-index: 3;
+    display: flex;
+    flex-direction: row;
+    height: auto;
+    justify-content: flex-end;
+    align-items: center;
+    height: 40px;
+    margin-top: 5px;
+    width: 90%;
+}
+
+.card-value {
+    width: 20%;
+    font-size: 1.6rem;
+    font-weight: bold;
+    text-shadow: -3px 3px 1px rgba(47, 52, 4, 0.651);
+
+}
+
+.card-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    top: -18px;
+    left: 0;
+
+}
+
+.card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background-position: center;
+
+}
+
+.card-footer {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 90%;
+    font-size: 0.9rem;
+    z-index: 3;
+    height: 50px;
+    margin-bottom: 20px;
+    padding: 10px;
+
+}
+
+.card-footer .card-emoji {
+    flex: 1;
+    font-size: 2.3rem;
+    text-shadow: -1px 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.card-footer .card-name {
+    flex: 3;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: black;
+    text-align: center;
+
+}
+
+
+
+.card:hover {
+    transform: scale(1.5);
+    box-shadow: 3px 25px 20px rgba(0, 0, 0, 0.686);
+    z-index: 100;
+
+}
+
+.card.placeholder:hover {
+    transform: none !important;
+}
+
+.card-placeholder {
+    border: none;
+    background: transparent;
+    width: 220px;
+    height: 290px;
+    position: relative;
+    overflow: hidden;
+    background: transparent;
+    border: 2px dashed #555;
+    cursor: default;
+    box-shadow: inset 0 0 10px 10px #00000097;
 }
 
 
@@ -270,38 +377,8 @@ html {
     width: 90%;
     margin-bottom: 1.5rem;
     margin-top: 1rem;
-
-    /* Remueve la altura fija si el contenido es más grande */
-    /* height: 150px; */
-}
-
-.weapon-slot,
-.armor-slot,
-.potion-slot {
-    width: 40%;
-    height: 150px;
-    background: #252424;
-    border: 2px dashed #9d6e38;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 1rem;
-    color: #fff;
-    cursor: pointer;
-    box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
-    gap: .5rem;
-}
-
-.weapon-info,
-.armor-info,
-.mana-info {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
+    /* center content of each cell */
+    justify-items: center;
 }
 
 .equipped-weapon,
@@ -312,7 +389,286 @@ html {
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
+    width: 100%;
     gap: 0.5rem;
+}
+
+.weapon-group {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 10px;
+}
+
+/* Sección para la pila de monstruos derrotados */
+.defeated-monsters {
+
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+
+}
+
+/* Contenedor donde se apilan las cartas */
+.monster-stack {
+    position: relative;
+    width: 70px;
+    margin-top: 0;
+    padding-top: 0;
+}
+
+.stack-top {
+    width: 70px;
+    height: 100px;
+    border: 1px solid #6d6d6d;
+    border-radius: 8px;
+    box-shadow: 0px -4px 8px rgba(0, 0, 0, 0.743);
+    position: absolute;
+    overflow: hidden;
+}
+
+.stack-top:nth-child(1) {
+    top: 0;
+    z-index: 1;
+}
+
+.stack-top:nth-child(2) {
+    top: 30px;
+    z-index: 2;
+}
+
+.stack-top:nth-child(3) {
+    top: 60px;
+    z-index: 3;
+}
+
+.stack-top:nth-child(4) {
+    top: 90px;
+    z-index: 4;
+}
+
+.stack-top:nth-child(5) {
+    top: 120px;
+    z-index: 5;
+}
+
+
+.stack-top .card-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+}
+
+.stack-top .card-content::after {
+    content: "";
+    background-image: none;
+}
+
+.stack-top .card-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin-top: 25px;
+}
+
+.stack-top .card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+.stack-top .card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.6);
+}
+
+.stack-top .card-footer {
+    display: flex;
+}
+
+.stack-top .card-footer .card-emoji {
+    flex: 1;
+    font-size: 1.5rem;
+    text-shadow: -1px 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.stack-top .card-footer .card-name {
+    display: none;
+}
+
+.stack-top .card-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: white;
+    text-shadow: -1px 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+
+.weapon-slot,
+.armor-slot,
+.potion-slot {
+    width: 180px;
+    height: 220px;
+    background: #252424;
+    border: 2px dashed #9d6e38;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: #fff;
+    cursor: default;
+    box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+    min-width: 180px;
+    gap: .5rem;
+}
+
+.weapon-info,
+.armor-info,
+.mana-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+}
+
+/* Cartas equipadas */
+
+.card.equipped {
+    /* Quitamos bordes y fondo para que no interfieran con el marco */
+    border: none;
+    background: transparent;
+    width: 135px;
+    height: 180px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 2%;
+    cursor: default;
+    box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Contenedor interno para el contenido de la carta */
+.card.equipped .card-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    z-index: 1;
+}
+
+/* Pseudo-elemento para el marco */
+.card.equipped .card-content::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* La imagen del marco, que debe tener partes transparentes para ver el contenido */
+    background: url('../assets/cards/cardFrame.png') no-repeat center center;
+    background-size: cover;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.card.equipped .card-header {
+    z-index: 3;
+    display: flex;
+    flex-direction: row;
+    height: auto;
+    justify-content: center;
+    align-items: center;
+    width: 90%;
+    height: 70%;
+}
+
+.card.equipped .card-value {
+    width: 100%;
+
+    font-size: 5rem;
+    font-weight: bold;
+    text-shadow: -3px 3px 1px rgba(47, 52, 4, 0.651);
+}
+
+.card.equipped .card-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    top: -18px;
+    left: 0;
+
+}
+
+.card.equipped .card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background-position: center;
+    filter: brightness(0.6);
+
+}
+
+.card.equipped .card-footer {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 90%;
+    font-size: 0.9rem;
+    z-index: 3;
+    height: 10px;
+    margin-bottom: 22px;
+    padding: 5px;
+
+}
+
+.card.equipped .card-footer .card-emoji {
+    flex: 1;
+    font-size: 1rem;
+    margin-top: 0px;
+    text-shadow: -1px 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.card.equipped .card-footer .card-name {
+    flex: 3;
+    font-size: .8rem;
+    font-weight: bold;
+    color: black;
+    text-align: center;
+
+}
+
+
+.card.equipped:hover {
+    transform: none !important;
 }
 
 .stats {
@@ -363,52 +719,19 @@ html {
     cursor: pointer;
 }
 
-.card {
-    width: 120px;
-    height: 180px;
-    background: #555;
-    border: 2px solid #535353;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    color: #fff;
-    cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-    transition: transform 0.2s ease, background 0.2s ease;
-}
 
-
-.card:hover {
-    transform: scale(1.1);
-    background: #666;
-}
-
-.card.placeholder {
-    background: transparent;
-    border: 2px dashed #555;
-    cursor: default;
-}
 
 
 .modal-monster-card,
 .modal-potion-card,
-.equipped {
-    width: 60px;
-    height: 90px;
-    background: #555;
-    border: 2px solid #535353;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    color: #fff;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-}
+.equipped {}
+
+
+
+
+
+
+
 
 /* Barra de salud */
 
@@ -602,4 +925,59 @@ html {
     margin: 0.2rem 0;
     padding: 0.2rem;
     transition: color 0.3s;
+}
+
+
+/* Modal Game Over */
+.game-over,
+.modal-content {
+    display: flex;
+    background-image: url('../assets/gameOver.png');
+    background-size: 430px;
+    background-position: center;
+    background-repeat: no-repeat;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    height: 500px;
+    width: 100%;
+    gap: 2rem;
+    padding-top: 110px;
+    padding-inline: 60px;
+    padding-bottom: 120px;
+    background-color: transparent;
+}
+
+.game-over-title {
+    font-size: 1.5rem;
+    color: #fff;
+    text-align: center;
+    text-shadow: 0px 10px 3px rgba(0, 0, 0, 0.89);
+}
+
+.game-over-stats {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    text-align: left;
+    gap: .5rem;
+    width: 100%;
+}
+
+.game-over-button {
+    width: 10rem;
+    padding: .2rem .5rem;
+    font-size: 1.3rem;
+    background: #421212;
+    border: 2px solid #2b0606;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s;
+    box-shadow: 0px 5px 25px rgba(0, 0, 0, 0.824);
+}
+
+.game-over-button:hover {
+    background: #952b2b;
+    box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.824);
 }
