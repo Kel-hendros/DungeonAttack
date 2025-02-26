@@ -72,6 +72,9 @@ function drawCard(
     case "mana":
       emoji = "🌀";
       break;
+    case "fist":
+      emoji = "👊";
+      break;
     default:
       emoji = "❓";
   }
@@ -246,7 +249,7 @@ function drawPlayer() {
   // "Poción" convertida a Mana: si gameState.mana > 0, mostramos una "carta" ficticia de Mana
   const effectiveMana = gameState.mana + gameState.playerStats.intelligence;
   const manaCard = {
-    id: 0,
+    id: 888,
     name: "Mana",
     value: effectiveMana,
     type: "mana",
@@ -254,12 +257,8 @@ function drawPlayer() {
   const manaHtml =
     effectiveMana > 0
       ? `<div class="mana-info">
-         ${drawCard(manaCard, 0, "equipped", false)}
-         <p class="mana-value">
-         <span class="formula">(${gameState.mana} + ${
-          gameState.playerStats.intelligence
-        })</span>
-        </p>
+         ${drawCard(manaCard, 0, "equipped", true)}
+         
         </div>
        `
       : "";
@@ -366,13 +365,20 @@ function drawDefeatedMonsters() {
 export function showModal(modalType, options = {}) {
   const modal = document.getElementById("gameModal");
   const modalContent = document.getElementById("modalContent");
+  let fistDamage = gameState.playerStats.strength;
+  let fistCard = {
+    id: 999,
+    name: "Puño limpio",
+    value: fistDamage,
+    type: "fist",
+  };
 
   if (modalType === "monster") {
     // Esperamos que options incluya: monsterCard y weaponCard
     modalContent.innerHTML = `
         <h3>Enfrentar monstruo</h3>
         <div class="modal-monster">
-          ${drawCard(options.monsterCard, 0, "modal-monster-card", false)}
+          ${drawCard(options.monsterCard, 0, "equipped", true)}
         </div>
         <div class="modal-options">
           <div class="option" data-value="weapon">
@@ -383,9 +389,10 @@ export function showModal(modalType, options = {}) {
             }
           </div>
           <div class="option" data-value="unarmed">
-            <div class="fist-option card">
-              <span style="font-size:2rem;">👊</span>
-            </div>
+            
+            ${drawCard(fistCard, 0, "modal-weapon-card")}
+              
+            
           </div>
         </div>
       `;
