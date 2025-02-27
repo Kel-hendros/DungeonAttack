@@ -373,29 +373,66 @@ export function showModal(modalType, options = {}) {
     type: "fist",
   };
 
+  let manaCard = {
+    id: 888,
+    name: "Mana",
+    value: card.value,
+    type: "mana",
+  };
+
   if (modalType === "monster") {
-    // Esperamos que options incluya: monsterCard y weaponCard
+    const monsterValue = options.monsterCard.value;
+    const armorValue = gameState.currentArmorValue || 0;
+    const fistValue = gameState.playerStats.strength;
+    const weaponValue = gameState.playerEquipment.weapon.value || 0;
+
     modalContent.innerHTML = `
-        <h3>Enfrentar monstruo</h3>
+        <h3>Enfrentar ${options.monsterCard.name}</h3>
         <div class="modal-monster">
           ${drawCard(options.monsterCard, 0, "equipped", true)}
         </div>
+        <div class="battle-analysis"></div>
         <div class="modal-options">
           <div class="option" data-value="weapon">
             ${
               options.weaponCard
-                ? drawCard(options.weaponCard, 0, "modal-weapon-card")
+                ? drawCard(options.weaponCard, 0, "equipped", true)
                 : `<p>No arma equipada</p>`
             }
           </div>
           <div class="option" data-value="unarmed">
             
-            ${drawCard(fistCard, 0, "modal-weapon-card")}
+            ${drawCard(fistCard, 0, "equipped", true)}
               
             
           </div>
         </div>
       `;
+
+    const battleAnalysisEl = modalContent.querySelector(".battle-analysis");
+
+    //calcular y mostrar el daño
+    function showAnalysis(chosenValue, attackIcon) {
+      let finalDamage = monsterValue - chosenValue - armorValue;
+      if (finalDamage < 0) finalDamage = 0;
+      battleAnalysisEl.textContent = `💀 ${monsterValue} - ${attackIcon} ${chosenValue} - 🛡️ ${armorValue} = ${finalDamage} daños!`;
+    }
+
+    // Asignar listeners de hover a las opciones
+    const optionElements = modalContent.querySelectorAll(".option");
+    optionElements.forEach((optionEl) => {
+      optionEl.addEventListener("mouseover", () => {
+        const choice = optionEl.dataset.value;
+        if (choice === "weapon") {
+          showAnalysis(weaponValue, "⚔️");
+        } else {
+          showAnalysis(fistValue, "👊🏻");
+        }
+      });
+      optionEl.addEventListener("mouseout", () => {
+        battleAnalysisEl.textContent = "";
+      });
+    });
   } else if (modalType === "potion") {
     modalContent.innerHTML = `
         <h3>Usar poción</h3>
