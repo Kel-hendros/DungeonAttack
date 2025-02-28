@@ -75,6 +75,9 @@ function drawCard(
     case "fist":
       emoji = "👊";
       break;
+    case "healing":
+      emoji = "❤️‍🩹";
+      break;
     default:
       emoji = "❓";
   }
@@ -362,7 +365,7 @@ function drawDefeatedMonsters() {
 
 // MODAL
 
-export function showModal(modalType, options = {}) {
+export function showModal(modalType, options = {}, canUseWeapon) {
   const modal = document.getElementById("gameModal");
   const modalContent = document.getElementById("modalContent");
   let fistDamage = gameState.playerStats.strength;
@@ -373,38 +376,40 @@ export function showModal(modalType, options = {}) {
     type: "fist",
   };
 
-  let manaCard = {
-    id: 888,
-    name: "Mana",
-    value: card.value,
-    type: "mana",
-  };
-
   if (modalType === "monster") {
     const monsterValue = options.monsterCard.value;
     const armorValue = gameState.currentArmorValue || 0;
     const fistValue = gameState.playerStats.strength;
-    const weaponValue = gameState.playerEquipment.weapon.value || 0;
+    const weaponValue = gameState.playerEquipment.weapon
+      ? gameState.playerEquipment.weapon.value
+      : 0;
+
+    let weaponOptionHTML = "";
+    if (canUseWeapon === "SI") {
+      weaponOptionHTML = options.weaponCard
+        ? drawCard(options.weaponCard, 0, "equipped", true)
+        : `<p>No arma equipada</p>`;
+    } else if (canUseWeapon === "NO WEAPON") {
+      weaponOptionHTML = `<div class="card-placeholder"></div>`;
+    } else if (canUseWeapon === "WEAPON USED") {
+      weaponOptionHTML = options.weaponCard
+        ? drawCard(options.weaponCard, 0, "equipped unavailable", true)
+        : `<p>No arma equipada</p>`;
+    }
 
     modalContent.innerHTML = `
+        <div id="closeModal" class="close-modal">X</div>
         <h3>Enfrentar ${options.monsterCard.name}</h3>
         <div class="modal-monster">
           ${drawCard(options.monsterCard, 0, "equipped", true)}
         </div>
-        <div class="battle-analysis"></div>
+        <div class="battle-analysis">▼ Como quieres atacar? ▼</div>
         <div class="modal-options">
           <div class="option" data-value="weapon">
-            ${
-              options.weaponCard
-                ? drawCard(options.weaponCard, 0, "equipped", true)
-                : `<p>No arma equipada</p>`
-            }
+            ${weaponOptionHTML}
           </div>
           <div class="option" data-value="unarmed">
-            
             ${drawCard(fistCard, 0, "equipped", true)}
-              
-            
           </div>
         </div>
       `;
@@ -415,7 +420,11 @@ export function showModal(modalType, options = {}) {
     function showAnalysis(chosenValue, attackIcon) {
       let finalDamage = monsterValue - chosenValue - armorValue;
       if (finalDamage < 0) finalDamage = 0;
-      battleAnalysisEl.textContent = `💀 ${monsterValue} - ${attackIcon} ${chosenValue} - 🛡️ ${armorValue} = ${finalDamage} daños!`;
+      battleAnalysisEl.textContent = `💀 ${monsterValue} - ${attackIcon} ${chosenValue} - 🛡️ ${armorValue} = Recibes ${finalDamage} daños!`;
+
+      if (gameState.playerHealth.current - finalDamage <= 0) {
+        battleAnalysisEl.textContent += " 🪦 ";
+      }
     }
 
     // Asignar listeners de hover a las opciones
@@ -424,61 +433,132 @@ export function showModal(modalType, options = {}) {
       optionEl.addEventListener("mouseover", () => {
         const choice = optionEl.dataset.value;
         if (choice === "weapon") {
-          showAnalysis(weaponValue, "⚔️");
+          if (canUseWeapon === "SI") {
+            showAnalysis(weaponValue, "⚔️");
+          } else if (canUseWeapon === "WEAPON USED") {
+            battleAnalysisEl.textContent =
+              "🚫 Ya derrotaste un monstruo igual o menor con esta arma!";
+          } else if (canUseWeapon === "NO WEAPON") {
+            battleAnalysisEl.textContent = "🚫 No tienes un arma equipada!";
+          }
         } else {
           showAnalysis(fistValue, "👊🏻");
         }
       });
       optionEl.addEventListener("mouseout", () => {
-        battleAnalysisEl.textContent = "";
+        battleAnalysisEl.textContent = "▼ Como quieres atacar? ▼";
       });
     });
   } else if (modalType === "potion") {
+    let manaCard = {
+      id: 888,
+      name: "Mana",
+      value: options.potionCard.value,
+      type: "mana",
+    };
+
+    let healingCard = {
+      id: 777,
+      name: "Curación",
+      value: options.potionCard.value,
+      type: "healing",
+    };
+
+    const potionHealthValue = options.potionCard.value;
+    const potionManaValue = options.potionCard.value;
+    const playerHealth = gameState.playerHealth.current;
+    const playerMaxHealth =
+      gameState.playerHealth.max + gameState.playerStats.constitution * 5;
+    const playerMana = gameState.mana + gameState.playerStats.intelligence;
+
     modalContent.innerHTML = `
-        <h3>Usar poción</h3>
+        <div id="closeModal" class="close-modal">
+          <span>X</span>
+          </div>
+        <h3>Usar ${options.potionCard.name}</h3>
         <div class="modal-potion">
-          ${drawCard(options.potionCard, 0, "modal-potion-card", false)}
+          ${drawCard(options.potionCard, 0, "equipped", true)}
         </div>
+        <div class="battle-analysis">▼ Como quieres usar la poción? ▼</div>
         <div class="modal-options">
           <div class="option" data-value="use">
-            <div class="fist-option card">
-                <span style="font-size:2rem;">❤️‍🩹</span>
-            </div>
+            ${drawCard(healingCard, 0, "equipped", true)}
           </div>
           <div class="option" data-value="equip">
-            <div class="fist-option card">
-             <span style="font-size:2rem;">🌀</span>
+            ${drawCard(manaCard, 0, "equipped", true)}
             </div>
           </div>
         </div>
         `;
+    const battleAnalysisEl = modalContent.querySelector(".battle-analysis");
+
+    //calcular y mostrar la salud o el mana incrementados
+    function showAnalysis(chosenValue, type) {
+      //finalHealth can not be abovev playerMaxHealth
+      let finalHealth = potionHealthValue + playerHealth;
+      if (finalHealth > playerMaxHealth) finalHealth = playerMaxHealth;
+      let finalMana = potionManaValue + playerMana;
+      if (type == "salud") {
+        battleAnalysisEl.textContent = `❤️ ${playerHealth} + ❤️‍🩹 ${potionHealthValue} = ${finalHealth} salud!`;
+      } else {
+        battleAnalysisEl.textContent = `🌀 ${playerMana} + 🌀 ${potionManaValue} = ${finalMana} mana!`;
+      }
+    }
+
+    // Asignar listeners de hover a las opciones
+    const optionElements = modalContent.querySelectorAll(".option");
+    optionElements.forEach((optionEl) => {
+      optionEl.addEventListener("mouseover", () => {
+        const choice = optionEl.dataset.value;
+        if (choice === "use") {
+          showAnalysis(potionHealthValue, "salud");
+        } else {
+          showAnalysis(potionManaValue, "mana");
+        }
+      });
+      optionEl.addEventListener("mouseout", () => {
+        battleAnalysisEl.textContent = "▼ Como quieres usar la poción? ▼";
+      });
+    });
   } else {
     // Otros tipos de modal pueden definirse acá
     modalContent.innerHTML = `<h3>Modal no implementado para el tipo ${modalType}</h3>`;
   }
 
   modal.style.display = "flex";
+  const closeModalBtn = modalContent.querySelector("#closeModal");
 
   return new Promise((resolve) => {
     // Get all option elements within the modal content
     const optionElements = modalContent.querySelectorAll(".option");
     // Iterate over each option element
     optionElements.forEach((optionEl) => {
-      // Add a click event listener to the current option element
-      optionEl.addEventListener("click", function onClick() {
-        // Get the selected choice from the 'data-value' attribute
-        const choice = optionEl.getAttribute("data-value");
-        // Hide the modal
-        modal.style.display = "none";
-        // Remove event listeners from all option elements to prevent duplicates
-        optionElements.forEach((opt) => {
-          opt.removeEventListener("click", onClick);
+      // if child div "card" also has the class "unavailable", disable it
+      if (optionEl.querySelector(".card").classList.contains("unavailable")) {
+        console.log("Option is unavailable");
+        return;
+      } else {
+        // Add a click event listener to the current option element
+        optionEl.addEventListener("click", function onClick() {
+          // Get the selected choice from the 'data-value' attribute
+          const choice = optionEl.getAttribute("data-value");
+          // Hide the modal
+          modal.style.display = "none";
+          // Remove event listeners from all option elements to prevent duplicates
+          optionElements.forEach((opt) => {
+            opt.removeEventListener("click", onClick);
+          });
+          // Log the selected choice to the console
+          console.log("Modal choice:", choice);
+          // Resolve the promise with the selected choice
+          resolve(choice);
         });
-        // Log the selected choice to the console
-        console.log("Modal choiceeee:", choice);
-        // Resolve the promise with the selected choice
-        resolve(choice);
-      });
+      }
+    });
+    // Add event listener to close button to reject the promise
+    closeModalBtn.addEventListener("click", () => {
+      modal.style.display = "none";
+      reject(new Error("Modal closed by user"));
     });
   });
 }

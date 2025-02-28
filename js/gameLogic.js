@@ -133,85 +133,98 @@ export async function processCard(index) {
   if (!card) return false;
 
   let actionProcessed = false;
-  switch (card.type) {
-    case "weapon":
-      console.warn("Carta clickeada:", card, "posición:", index);
-      actionProcessed = equipWeapon(card);
-      break;
-    case "armor":
-      console.warn("Carta clickeada:", card, "posición:", index);
-      actionProcessed = equipArmor(card);
-      break;
-    case "potion":
-      console.warn("Carta clickeada:", card, "posición:", index);
-      const userChoice = await showModal("potion", { potionCard: card });
-      if (userChoice === "use") {
-        actionProcessed = usePotion(card);
-      } else {
-        actionProcessed = equipPotion(card);
+
+  try {
+    switch (card.type) {
+      case "weapon":
+        console.warn("Carta clickeada:", card, "posición:", index);
+        actionProcessed = equipWeapon(card);
+        break;
+      case "armor":
+        console.warn("Carta clickeada:", card, "posición:", index);
+        actionProcessed = equipArmor(card);
+        break;
+      case "potion": {
+        console.warn("Carta clickeada:", card, "posición:", index);
+        const userChoice = await showModal("potion", { potionCard: card });
+        if (userChoice === "use") {
+          actionProcessed = usePotion(card);
+        } else {
+          actionProcessed = equipPotion(card);
+        }
+        break;
       }
-      break;
-    case "spell":
-      console.warn("Carta clickeada:", card, "posición:", index);
-      actionProcessed = await castSpell(card);
-      break;
-    case "monster":
-      console.warn("Carta clickeada:", card, "posición:", index);
-      // Si tengo un arma equipada, evaluamos si se puede usar
-      if (gameState.playerEquipment.weapon) {
-        console.log("Arma equipada:", gameState.playerEquipment.weapon);
-        let canUseWeapon = false;
-        // Si ya derrotamos monstruos con el arma, verificamos el value del último
-        if (
-          gameState.weaponDefeatedMonsters &&
-          gameState.weaponDefeatedMonsters.length > 0
-        ) {
-          const lastDefeated =
-            gameState.weaponDefeatedMonsters[
-              gameState.weaponDefeatedMonsters.length - 1
-            ];
-          console.log("Último monstruo derrotado:", lastDefeated);
-          if (lastDefeated.value > card.value) {
+      case "spell":
+        console.warn("Carta clickeada:", card, "posición:", index);
+        actionProcessed = await castSpell(card);
+        break;
+      case "monster": {
+        console.warn("Carta clickeada:", card, "posición:", index);
+        let availableWeapon = "";
+        if (gameState.playerEquipment.weapon) {
+          let canUseWeapon = false;
+          // Si ya hay monstruos derrotados, comparamos el value del último con el actual
+          if (
+            gameState.weaponDefeatedMonsters &&
+            gameState.weaponDefeatedMonsters.length > 0
+          ) {
+            const lastDefeated =
+              gameState.weaponDefeatedMonsters[
+                gameState.weaponDefeatedMonsters.length - 1
+              ];
+            console.log("Último monstruo derrotado:", lastDefeated);
+            // Si el último monstruo derrotado tiene un valor mayor o igual, el arma ya se usó efectivamente
+            canUseWeapon = lastDefeated.value > card.value;
+          } else {
+            // Si aún no hay monstruos derrotados, se puede usar el arma
             canUseWeapon = true;
           }
+          availableWeapon = canUseWeapon ? "SI" : "WEAPON USED";
         } else {
-          // Si aún no hay monstruos derrotados, permitimos usar el arma
-          canUseWeapon = true;
+          availableWeapon = "NO WEAPON";
         }
-        console.log("Puede usar arma?", canUseWeapon);
-        if (canUseWeapon) {
-          // Se abre el Modal con las opciones de Monstruo
-          const userChoice = await showModal("monster", {
+        console.log("Estado del arma:", availableWeapon);
+
+        // Se abre el modal siempre, pasando el estado del arma
+        const userChoice = await showModal(
+          "monster",
+          {
             monsterCard: card,
             weaponCard: gameState.playerEquipment.weapon,
-          });
-          if (userChoice === "weapon") {
-            actionProcessed = attackMonsterWithWeapon(card);
-            if (actionProcessed) {
-              // Agregar el monstruo a la pila de derrotados con arma
-              if (!gameState.weaponDefeatedMonsters) {
-                gameState.weaponDefeatedMonsters = [];
-              }
-              gameState.weaponDefeatedMonsters.push(card);
+          },
+          availableWeapon
+        );
+
+        // Según la elección del usuario y el estado del arma, se decide la acción
+        if (userChoice === "weapon" && availableWeapon === "SI") {
+          actionProcessed = attackMonsterWithWeapon(card);
+          if (actionProcessed) {
+            // Agregar el monstruo a la pila de derrotados con arma
+            if (!gameState.weaponDefeatedMonsters) {
+              gameState.weaponDefeatedMonsters = [];
             }
-          } else {
-            actionProcessed = attackMonsterUnarmed(card);
+            gameState.weaponDefeatedMonsters.push(card);
           }
         } else {
-          // Si el arma no sirve, se pelea a mano
           actionProcessed = attackMonsterUnarmed(card);
         }
-      } else {
-        // Si no tengo arma equipada, se pelea a mano
-        actionProcessed = attackMonsterUnarmed(card);
+        break;
       }
-      break;
-    default:
-      console.warn("Tipo de carta desconocido:", card.type);
-  }
-  if (actionProcessed) {
-    removeCard(index);
-    saveGameState();
+      default:
+        console.warn("Tipo de carta desconocido:", card.type);
+        break;
+    }
+    if (actionProcessed) {
+      removeCard(index);
+      saveGameState();
+    }
+  } catch (error) {
+    if (error.message === "Modal closed by user") {
+      console.log("Modal was closed by the user. Cancelling card processing.");
+      // Lógica para cancelar el procesamiento de la carta
+    } else {
+      console.error("An unexpected error occurred:", error);
+    }
   }
   return actionProcessed;
 }
