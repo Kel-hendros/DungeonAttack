@@ -1,6 +1,12 @@
 import { loadGameState, resetGameState, gameState } from "./gameState.js";
 import { cardData } from "../data/cards.js";
-import { processCard, generateRoomCards, checkGameOver } from "./gameLogic.js";
+import {
+  processCard,
+  generateRoomCards,
+  checkGameOver,
+  checkDungeonVictory,
+  runFromRoom,
+} from "./gameLogic.js";
 
 // Cargar el estado guardado o comenzar de 0
 document.addEventListener("DOMContentLoaded", () => {
@@ -15,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateUI();
 });
 
-function updateUI() {
+export function updateUI() {
   drawDungeon();
   if (!gameState.inTargetSelection) {
     drawRoom();
@@ -23,9 +29,10 @@ function updateUI() {
   drawPlayer();
   updateHealthBar();
   console.log("[updateUI] Player health:", gameState.playerHealth.current);
+  console.log("[updateUI] Player health max:", gameState.playerHealth.max);
 }
 
-function drawUI() {
+export function drawUI() {
   const app = document.getElementById("app");
   app.innerHTML = `
     <div id="dungeon" class="dungeon"></div>
@@ -78,6 +85,15 @@ function drawCard(
     case "healing":
       emoji = "❤️‍🩹";
       break;
+    case "strength":
+      emoji = "💪";
+      break;
+    case "constitution":
+      emoji = "⚕️";
+      break;
+    case "intelligence":
+      emoji = "🧠";
+      break;
     default:
       emoji = "❓";
   }
@@ -97,7 +113,7 @@ function drawCard(
   }" onerror="this.style.display='none';" />
       </div>
       <div class="card-footer">
-        <span class="card-emoji">${emoji}</span>
+        <div class="card-emoji">${emoji}</div>
         <div class="card-name">${card.name}</div>
       </div>
     </div>
@@ -118,7 +134,8 @@ function drawDungeon() {
         </div>
         <div class="dungeon-title">
           <h2>Dungeon Attack!</h2>
-          <button id="backBtn">Volver</button>
+          <button id="backBtn" class="back-button">Volver</button>
+          <div id="run" class="run-button">Escapar</div>
         </div>
         <div class="discard-pile">
           <div class="card-back">
@@ -133,6 +150,13 @@ function drawDungeon() {
   if (backBtn) {
     backBtn.addEventListener("click", () => {
       window.location.href = "index.html";
+    });
+  }
+
+  const runBtn = document.getElementById("run");
+  if (runBtn) {
+    runBtn.addEventListener("click", () => {
+      runFromRoom();
     });
   }
 }
@@ -191,9 +215,6 @@ function findCardById(id, type) {
 
 function drawPlayer() {
   const playerEl = document.getElementById("player");
-  // Actualizamos la salud en base a la constitución
-  gameState.playerHealth.max =
-    gameState.playerHealth.max + gameState.playerStats.constitution * 5;
 
   // Barra de vida
   const healthBarHTML = `
@@ -207,22 +228,15 @@ function drawPlayer() {
   let weaponHtml;
   if (gameState.playerEquipment.weapon) {
     const baseValue = gameState.playerEquipment.weapon.value;
-    const strength = gameState.playerStats.strength;
-    const effectiveValue = baseValue + strength;
+
     weaponHtml = `
       <div class="weapon-info">
-        ${drawCard(
-          gameState.playerEquipment.weapon,
-          0,
-          "equipped",
-          true,
-          effectiveValue
-        )}
+        ${drawCard(gameState.playerEquipment.weapon, 0, "equipped", true)}
         
       </div>
     `;
   } else {
-    weaponHtml = "";
+    weaponHtml = '<div class="placeholder-slot">⚔️</div>';
   }
 
   // Dibujo de la pila de monstruos derrotados
@@ -245,7 +259,7 @@ function drawPlayer() {
     </div>
   `;
   } else {
-    armorHtml = "";
+    armorHtml = '<div class="placeholder-slot">🛡️</div>';
   }
 
   // Dibujo el Mana equipado
@@ -264,13 +278,13 @@ function drawPlayer() {
          
         </div>
        `
-      : "";
+      : '<div class="placeholder-slot">🌀</div>';
 
   playerEl.innerHTML = `
       
       <div class="equipment">
         <div class="equipped-weapon">
-            <p>Armamento</p>
+         
             <div class="weapon-group">
               <div class="weapon-slot">
                 <p>${weaponHtml}</p>
@@ -281,22 +295,22 @@ function drawPlayer() {
             </div>
         </div>
         <div class="equipped-armor">
-            <p>Protección</p>
+         
             <div class="armor-slot">
             <p>${armorHtml}</p>
             </div>
         </div>
         <div class="equipped-potion">
-            <p>Mana</p>
+         
             <div class="potion-slot">
            <p>${manaHtml}</p>
            </div>
         </div>
       </div>
       <div class="stats">
-        <p>Fuerza: <span id="str">${gameState.playerStats.strength}</span></p>
-        <p>Constitución: <span id="con">${gameState.playerStats.constitution}</span></p>
-        <p>Inteligencia: <span id="int">${gameState.playerStats.intelligence}</span></p>
+        <p>💪🏻 Fuerza: <span id="str">${gameState.playerStats.strength}</span></p>
+        <p>⚕️Constitución: <span id="con">${gameState.playerStats.constitution}</span></p>
+        <p>🧠 Inteligencia: <span id="int">${gameState.playerStats.intelligence}</span></p>
       </div>
       <div class="health-bar-container">
         ${healthBarHTML}
@@ -533,8 +547,9 @@ export function showModal(modalType, options = {}, canUseWeapon) {
     const optionElements = modalContent.querySelectorAll(".option");
     // Iterate over each option element
     optionElements.forEach((optionEl) => {
-      // if child div "card" also has the class "unavailable", disable it
-      if (optionEl.querySelector(".card").classList.contains("unavailable")) {
+      const cardEl = optionEl.querySelector(".card");
+      // Check if the option is unavailable
+      if (cardEl && cardEl.classList.contains("unavailable")) {
         console.log("Option is unavailable");
         return;
       } else {
@@ -567,8 +582,7 @@ function updateHealthBar() {
   const healthBarInner = document.getElementById("healthBarInner");
   const healthText = document.getElementById("healthText");
   const current = gameState.playerHealth.current;
-  const max =
-    gameState.playerHealth.max + gameState.playerStats.constitution * 5;
+  const max = gameState.playerHealth.max;
   const percent = Math.max(0, Math.min(100, (current / max) * 100));
 
   // Actualizamos el width
@@ -585,7 +599,12 @@ function updateHealthBar() {
   }
   //actualizamos el valor previo
   gameState.playerHealth.prev = current;
-  console.log(gameState.playerHealth.prev);
+  console.log("[updateHealthBar] Salud previa:", gameState.playerHealth.prev);
+  console.log(
+    "[updateHealthBar] Salud actual:",
+    gameState.playerHealth.current
+  );
+  console.log("[updateHealthBar] Salud máxima:", gameState.playerHealth.max);
   checkGameOver();
 }
 
@@ -775,5 +794,79 @@ export function showGameOverModal({
     resetGameState();
     // Redirigimos al index (o donde inicie un nuevo juego)
     window.location.href = "game.html";
+  });
+}
+
+export function showVictoryModal() {
+  const modal = document.getElementById("gameModal");
+  const modalContent = document.getElementById("modalContent");
+
+  const strengthCard = {
+    id: 1001,
+    name: "+1 Fuerza",
+    value: "",
+    type: "strength",
+  };
+  const constitutionCard = {
+    id: 1002,
+    name: "+1 Constitución",
+    value: "",
+    type: "constitution",
+  };
+  const intelligenceCard = {
+    id: 1003,
+    name: "+1 Inteligencia",
+    value: "",
+    type: "intelligence",
+  };
+
+  modalContent.innerHTML = `
+  <div class="game-over-title">
+    <h3>⚜️ ¡Victória! ⚜️</h3>
+  </div>
+    <div class="game-over-stats">
+    Dificultad del Dungeon completado: ${gameState.deckTier}
+    </div>
+    <div class="victory-rules">
+    <p>Elige una estadística para mejorar:</p>
+    <p><strong>💪🏻 Fuerza (${
+      gameState.playerStats.strength
+    }):</strong> Mejora tus ataques a puño limpio.
+    <p><strong>⚕️ Constitución  (${
+      gameState.playerStats.constitution
+    }):</strong> Incrementa tu salud máxima.
+    <p><strong>🧠 Inteligencia  (${
+      gameState.playerStats.intelligence
+    }):</strong> Aumenta tu mana permanente.
+    </div>
+    <div class="modal-options">
+      <div class="option" data-value="strength">
+      ${drawCard(strengthCard, 0, "equipped", true)}
+      </div>
+    <div class="option" data-value="constitution">
+      ${drawCard(constitutionCard, 0, "equipped", true)}
+    </div>
+    <div class="option" data-value="intelligence">
+      ${drawCard(intelligenceCard, 0, "equipped", true)}
+    </div>
+      
+  `;
+
+  modal.style.display = "flex";
+
+  return new Promise((resolve, reject) => {
+    const optionElements = modalContent.querySelectorAll(".option");
+
+    optionElements.forEach((optionEl) => {
+      optionEl.addEventListener("click", function onClick() {
+        const chosenStat = optionEl.getAttribute("data-value");
+        modal.style.display = "none";
+        // Remover listeners para evitar duplicados
+        optionElements.forEach((opt) => {
+          opt.removeEventListener("click", onClick);
+        });
+        resolve(chosenStat);
+      });
+    });
   });
 }

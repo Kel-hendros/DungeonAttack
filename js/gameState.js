@@ -2,7 +2,7 @@
 const gameState = {
   deckKey: "starter", // Identifica el mazo actual, por ejemplo "starter"
   deckTier: 1, // Indica el tier del mazo, que puede incrementarse al mejorar
-  roomSize: 5, // Numero de cartas por habitación
+  roomSize: 4, // Numero de cartas por habitación
   visitedDungeons: 1, // Cantidad de dungeons visitados
   playerStats: {
     // Estadísticas del jugador
@@ -29,6 +29,7 @@ const gameState = {
   dungeonDeck: [], // Mazo del dungeon completo
   discardPile: [], // Pila de descarte para las cartas usadas o vencidas
   playerHealth: {
+    base: 20,
     current: 20,
     max: 20,
     prev: 20,
@@ -36,6 +37,7 @@ const gameState = {
   newIndexes: [],
   inTargetSelection: false,
   log: [],
+  runUsed: 0,
 };
 
 function resetGameState() {
@@ -48,6 +50,7 @@ function resetGameState() {
     intelligence: 0,
   };
   gameState.playerHealth = {
+    base: 20,
     current: 20,
     max: 20,
     prev: 20,
@@ -64,7 +67,7 @@ function resetGameState() {
     potion: false,
   };
   gameState.weaponDefeatedMonsters = [];
-  gameState.currentArmorValue = [];
+  gameState.currentArmorValue = 0;
   gameState.currentRoomCards = [];
   gameState.dungeonDeck = [];
   gameState.cardsRemaining = 0;
@@ -72,6 +75,7 @@ function resetGameState() {
   gameState.newIndexes = [];
   gameState.inTargetSelection = false;
   gameState.log = [];
+  gameState.runUsed = 0;
 }
 
 export { gameState, resetGameState };

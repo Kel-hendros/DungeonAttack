@@ -1,9 +1,9 @@
 import { cardData, decks } from "../data/cards.js";
 import { saveGameState } from "./gameState.js";
 import { gameState } from "./gameState.js";
-import { showModal, showGameOverModal } from "./ui.js";
+import { showModal, showGameOverModal, showVictoryModal } from "./ui.js";
 import { showSpellTargetSelector } from "./ui.js";
-import { updateLogUI } from "./ui.js";
+import { drawUI, updateUI, updateLogUI } from "./ui.js";
 
 // Inicializar el contador de unique IDs del mazo
 let uniqueIdCounter = 1;
@@ -12,6 +12,8 @@ function generateUniqueId() {
 }
 
 export function initializeDungeonDeck() {
+  // console log para verificar que se está generando el mazo
+  console.log("Inicializando mazo del dungeon...");
   const deckDefinition = decks[gameState.deckKey];
   let fullDeck = [];
   const composition = deckDefinition.composition;
@@ -23,14 +25,32 @@ export function initializeDungeonDeck() {
     const availableCards = cardData[type].filter(
       (card) => card.tier <= gameState.deckTier
     );
-    for (let i = 0; i < count; i++) {
-      const randomIndex = Math.floor(Math.random() * availableCards.length);
-      // Clonamos la carta y le asignamos un ID único:
-      const newCard = {
-        ...availableCards[randomIndex],
-        instanceId: generateUniqueId(),
-      };
-      fullDeck.push(newCard);
+
+    // Si el número de cartas requeridas es mayor o igual que las únicas disponibles,
+    // primero agregamos todas las cartas únicas.
+    if (availableCards.length <= count) {
+      availableCards.forEach((card) => {
+        const newCard = { ...card, instanceId: generateUniqueId() };
+        fullDeck.push(newCard);
+      });
+      // Luego, completamos el resto de las cartas faltantes con selecciones al azar
+      const remaining = count - availableCards.length;
+      for (let i = 0; i < remaining; i++) {
+        const randomIndex = Math.floor(Math.random() * availableCards.length);
+        const newCard = {
+          ...availableCards[randomIndex],
+          instanceId: generateUniqueId(),
+        };
+        fullDeck.push(newCard);
+      }
+    } else {
+      // Si hay más cartas únicas disponibles de las que necesitamos,
+      // elegimos aleatoriamente 'count' de ellas, asegurando que sean únicas.
+      const shuffled = shuffleArray(availableCards.slice());
+      for (let i = 0; i < count; i++) {
+        const newCard = { ...shuffled[i], instanceId: generateUniqueId() };
+        fullDeck.push(newCard);
+      }
     }
   });
 
@@ -43,6 +63,8 @@ export function initializeDungeonDeck() {
 }
 
 export function generateRoomCards() {
+  // console log para verificar que se está generando el mazo
+  console.log("Generando cartas de la habitación...");
   // Si aún no se ha inicializado el dungeon deck, lo generamos
   if (gameState.dungeonDeck.length === 0) {
     initializeDungeonDeck();
@@ -61,7 +83,7 @@ export function generateRoomCards() {
 
   // Actualizamos el estado con las cartas de la habitación actual
   gameState.currentRoomCards = roomCards;
-  gameState.cardsRemaining = roomCards.filter((card) => card !== null).lenght;
+  gameState.cardsRemaining = roomCards.filter((card) => card !== null).length;
 
   console.log("Room size:", gameState.roomSize);
   console.log("Deck length antes de splice:", gameState.dungeonDeck.length);
@@ -90,11 +112,17 @@ export function removeCard(cardIndex) {
   if (gameState.cardsRemaining <= 1) {
     nextRoom();
   }
+  checkDungeonVictory();
+
   return gameState.currentRoomCards;
 }
 
 // Función para avanzar al siguiente room
 export function nextRoom() {
+  if (gameState.runUsed > 0) {
+    gameState.runUsed = gameState.runUsed - 1;
+    console.log("ajuste de runUsed:", gameState.runUsed);
+  }
   console.log("Pasando al siguiente room...");
   logAction("Ingresas a una nueva habitación");
   const roomSize = gameState.roomSize;
@@ -118,6 +146,7 @@ export function nextRoom() {
     (card) => card !== null
   ).length;
   gameState.newRoom = true;
+  saveGameState();
   return gameState.currentRoomCards;
 }
 
@@ -283,8 +312,7 @@ function attackMonsterWithWeapon(card) {
   let message = `Te enfrentas con tu <strong>${gameState.playerEquipment.weapon.name}</strong> a un feroz enemigo: <strong>${card.name}</strong>, `;
 
   // Paso 1: Usamos el arma para "reducir" el daño
-  let effectiveWeaponValue =
-    gameState.playerEquipment.weapon.value + gameState.playerStats.strength;
+  let effectiveWeaponValue = gameState.playerEquipment.weapon.value;
   let remainingDamage = card.value - effectiveWeaponValue;
   message += `que ataca con fuerza ${card.value}. `;
   if (remainingDamage < 0) remainingDamage = 0;
@@ -537,4 +565,157 @@ export function checkGameOver() {
       cardsPlayed,
     });
   }
+}
+
+// Función para verificar si se completó el dungeon actual
+export async function checkDungeonVictory() {
+  // Verificamos si el dungeon está vacío y además no quedan cartas en la habitación
+  if (
+    gameState.dungeonDeck.length === 0 &&
+    gameState.currentRoomCards.every((card) => card === null)
+  ) {
+    console.log("¡Dungeon completado!");
+    // Llamamos al modal de victoria y esperamos la elección del usuario
+    try {
+      const chosenStat = await showVictoryModal();
+      // Actualizamos la estadística elegida (por ejemplo, incrementamos en 1)
+      upgradePlayerStat(chosenStat);
+      logAction(`¡Victoria! Has mejorado tu ${chosenStat}.`);
+      proceedToNextDungeon();
+    } catch (error) {
+      console.error("El modal de victoria se cerró sin elegir:", error);
+    }
+  }
+}
+
+function upgradePlayerStat(stat) {
+  // Supongamos que cada mejora incrementa el stat en 1
+  if (gameState.playerStats.hasOwnProperty(stat)) {
+    gameState.playerStats[stat] += 1;
+    console.log(`Stat ${stat} incrementado a ${gameState.playerStats[stat]}`);
+    saveGameState();
+  } else {
+    console.warn(`La estadística ${stat} no existe en playerStats.`);
+  }
+}
+
+// Llamada tras showVictoryModal y upgradePlayerStat
+function proceedToNextDungeon() {
+  // Incrementar tier (si corresponde)
+  gameState.deckTier++;
+  // Llevar registro de cuántos dungeons se han completado
+  gameState.visitedDungeons = (gameState.visitedDungeons || 0) + 1;
+
+  // reset para nuevo run
+  resetRun();
+
+  // Inicializar de nuevo el mazo y la habitación
+  generateRoomCards();
+
+  drawUI();
+  updateUI();
+  saveGameState();
+
+  console.log("¡Listo para el siguiente dungeon!");
+}
+
+async function resetRun() {
+  return new Promise((resolve) => {
+    // Reseteamos la salud y mana para el nuevo dungeon
+
+    if (gameState.playerStats.constitution > 0) {
+      gameState.playerHealth.max =
+        gameState.playerHealth.base + gameState.playerStats.constitution * 5;
+    } else {
+      gameState.playerHealth.max = gameState.playerHealth.base;
+    }
+
+    gameState.playerHealth.current = gameState.playerHealth.max;
+    gameState.mana = 0;
+    console.log("Salud máxima actualizada:", gameState.playerHealth.max);
+
+    // Se vacían los equipamientos y se reinicia el valor actual de armadura
+    gameState.playerEquipment = {
+      weapon: null,
+      armor: null,
+      potion: null,
+    };
+    gameState.newEquipment = {
+      weapon: false,
+      armor: false,
+      potion: false,
+    };
+    gameState.weaponDefeatedMonsters = [];
+    gameState.currentArmorValue = 0;
+
+    // Se reinician los mazos y la habitación
+    gameState.currentRoomCards = [];
+    gameState.dungeonDeck = [];
+    gameState.cardsRemaining = 0;
+    gameState.discardPile = [];
+    gameState.newIndexes = [];
+
+    // Reiniciamos banderas y log
+    gameState.inTargetSelection = false;
+    gameState.log = [];
+
+    //console log all player stats
+    console.log(gameState.playerStats);
+    console.log(gameState.playerHealth);
+    console.log(gameState.mana);
+    console.log(gameState.playerEquipment);
+    console.log(gameState.newEquipment);
+
+    console.log("Reset de datos volatiles completado.");
+    resolve();
+  });
+}
+
+export function runFromRoom() {
+  // Comprobar que la room esté completa (ningún slot vacío)
+  if (gameState.currentRoomCards.some((card) => card === null)) {
+    console.log("La habitación no está completa, no puedes correr.");
+    logAction(
+      `Ya te has adentrado demasiado en esta habitación, no puedes huir ahora!`
+    );
+    return false;
+  }
+
+  // Comprobar que no se haya corrido ya en esta room
+  if (gameState.runUsed > 0) {
+    console.log("Ya has corrido en esta habitación.");
+    logAction(
+      `Has llegado a hasta aqui escapando de la habitación anterior... es hora de enfrentar los desafios.`
+    );
+    return false;
+  }
+
+  // Marcar que se ha usado "Run!" en la room actual
+
+  gameState.runUsed = gameState.runUsed + 2;
+
+  // Tomar las cartas de la habitación y mezclarlas
+  const roomCards = gameState.currentRoomCards.slice();
+  const shuffledRoomCards = shuffleArray(roomCards);
+
+  // Añadir estas cartas al final del mazo del dungeon
+  gameState.dungeonDeck = gameState.dungeonDeck.concat(shuffledRoomCards);
+
+  // Vaciar la habitación (se puede generar una nueva room o dejarla vacía hasta que se llame a nextRoom)
+  gameState.currentRoomCards = new Array(gameState.roomSize).fill(null);
+  gameState.cardsRemaining = 0;
+
+  console.log(
+    "Has corrido de la habitación. Las cartas se han añadido al final del mazo.",
+    gameState.runUsed
+  );
+  // Actualizar la UI para reflejar el cambio
+  logAction(
+    `Has escapado de esta habitación, pero solo por ahora. Para completar el Dungeon deberás volver más tarde y terminar lo que empezaste.`
+  );
+  saveGameState();
+  nextRoom();
+  updateUI();
+
+  return true;
 }

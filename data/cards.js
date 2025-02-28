@@ -1,19 +1,19 @@
 // Ejemplo de definición de cartas
 
 const monster = [
-  { id: 3, name: "Kobold", value: 1, type: "monster", tier: 1 },
-  { id: 4, name: "Rata Gigante", value: 2, type: "monster", tier: 1 },
-  { id: 5, name: "Esqueleto", value: 3, type: "monster", tier: 1 },
-  { id: 6, name: "Zombi", value: 4, type: "monster", tier: 1 },
-  { id: 7, name: "Bandido", value: 5, type: "monster", tier: 1 },
-  { id: 8, name: "Lobo Salvaje", value: 6, type: "monster", tier: 1 },
-  { id: 9, name: "Troll de las Cavernas", value: 7, type: "monster", tier: 1 },
-  { id: 10, name: "Ogro", value: 8, type: "monster", tier: 1 },
-  { id: 11, name: "Harpía", value: 9, type: "monster", tier: 1 },
-  { id: 12, name: "Minotauro", value: 10, type: "monster", tier: 1 },
-  { id: 13, name: "Gárgola", value: 11, type: "monster", tier: 1 },
-  { id: 14, name: "Cria de Dragón", value: 12, type: "monster", tier: 1 },
-  { id: 15, name: "Capitán Orco", value: 13, type: "monster", tier: 1 },
+  { id: 3, name: "Kobold", value: 2, type: "monster", tier: 1 },
+  { id: 4, name: "Rata Gigante", value: 3, type: "monster", tier: 1 },
+  { id: 5, name: "Esqueleto", value: 4, type: "monster", tier: 1 },
+  { id: 6, name: "Zombi", value: 5, type: "monster", tier: 1 },
+  { id: 7, name: "Bandido", value: 6, type: "monster", tier: 1 },
+  { id: 8, name: "Lobo Salvaje", value: 7, type: "monster", tier: 1 },
+  { id: 9, name: "Troll de las Cavernas", value: 8, type: "monster", tier: 1 },
+  { id: 10, name: "Ogro", value: 9, type: "monster", tier: 1 },
+  { id: 11, name: "Harpía", value: 10, type: "monster", tier: 1 },
+  { id: 12, name: "Minotauro", value: 11, type: "monster", tier: 1 },
+  { id: 13, name: "Gárgola", value: 12, type: "monster", tier: 1 },
+  { id: 14, name: "Cria de Dragón", value: 13, type: "monster", tier: 1 },
+  { id: 15, name: "Capitán Orco", value: 15, type: "monster", tier: 1 },
 ];
 
 const weapon = [
@@ -29,7 +29,7 @@ const weapon = [
   {
     id: 111,
     name: "Espada de gran calidad",
-    value: 11,
+    value: 12,
     type: "weapon",
     tier: 1,
   },
@@ -79,10 +79,10 @@ export const decks = {
     tier: 1,
     composition: {
       monster: 20,
-      weapon: 10,
-      armor: 10,
+      weapon: 12,
+      armor: 5,
       potion: 10,
-      spell: 5,
+      spell: 3,
     },
   },
   // Podés definir más decks para niveles superiores

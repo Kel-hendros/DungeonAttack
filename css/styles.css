@@ -108,8 +108,8 @@ html {
     min-width: 50%;
     max-width: 90%;
     flex-direction: row;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-start;
+    justify-content: space-around;
     padding: 1rem;
 
 }
@@ -167,14 +167,57 @@ html {
 }
 
 .dungeon-title {
-    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
+    gap: .5rem;
     color: #fff;
+    height: 100%;
+    position: relative;
+
 }
 
 .dungeon-title h2 {
-    font-size: 2rem;
-    margin: 0;
+    font-size: 3rem;
+
+}
+
+.back-button {
+    background-color: grey;
+    width: 30%;
+    color: lightgray;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.run-button {
+    position: absolute;
+    top: 80px;
+    width: 150px;
+    height: 80px;
+    margin-top: 1rem;
+    background-color: transparent;
+    background-image: url('../assets/button.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    filter: drop-shadow(0px 5px 15px rgba(0, 0, 0, 0.824));
+    cursor: pointer;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    transition: color 0.3s, transform 0.2s, filter 0.2s;
+
+}
+
+.run-button:hover {
+    filter: drop-shadow(0px 5px 5px rgba(0, 0, 0, 0.824));
+    transform: scale(.95);
+
+
 }
 
 /* Sección de la Habitación */
@@ -358,7 +401,7 @@ html {
     padding: 1rem;
     padding-top: 1.3rem;
     text-align: center;
-    padding-bottom: 5rem;
+    padding-bottom: 2rem;
     background-image: url('../assets/satchel.png');
     background-repeat: repeat;
     background-size: 100%;
@@ -544,7 +587,16 @@ html {
     box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
     min-width: 180px;
     gap: .5rem;
+
 }
+
+.placeholder-slot {
+    font-size: 9rem;
+    filter: grayscale();
+    color: rgba(0, 0, 0, 0.222);
+}
+
+
 
 .weapon-info,
 .armor-info,
@@ -635,38 +687,44 @@ html {
     height: 100%;
     object-fit: contain;
     background-position: center;
-    filter: brightness(0.6);
+    /* filter: brightness(0.9); */
 
 }
 
 .card.equipped .card-footer {
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
+    justify-content: space-evenly;
     align-items: center;
-    width: 90%;
+    width: 100%;
     font-size: 0.9rem;
     z-index: 3;
     height: 10px;
     margin-bottom: 22px;
     padding: 5px;
+    gap: 0px;
 
 }
 
 .card.equipped .card-footer .card-emoji {
-    flex: 1;
+    flex: 0;
     font-size: 1rem;
     margin-top: 0px;
     text-shadow: -1px 1px 3px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    width: fit-content;
+
 }
 
 .card.equipped .card-footer .card-name {
-    flex: 3;
+    flex: 0;
+    width: fit-content;
     font-size: .8rem;
     font-weight: bold;
     color: black;
     text-align: center;
-
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 
@@ -675,10 +733,11 @@ html {
 }
 
 .stats {
+    font-size: 1.5rem;
     /* Si querés que las stats estén en una sola fila o en columnas, podés ajustarlo */
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
+    gap: 3rem;
 }
 
 
@@ -1056,10 +1115,11 @@ html {
     gap: 2rem;
     background-color: transparent;
     overflow: visible;
+    padding-inline: 8rem;
 }
 
 .game-over-title {
-    font-size: 1.5rem;
+    font-size: 3rem;
     color: #fff;
     text-align: center;
     text-shadow: 0px 10px 3px rgba(0, 0, 0, 0.89);
@@ -1071,25 +1131,32 @@ html {
     align-items: flex-start;
     justify-content: center;
     text-align: left;
+    font-size: 1.5rem;
     gap: .5rem;
-    width: 100%;
+    width: 95%;
 }
 
 .game-over-button {
-    width: 10rem;
-    padding: .2rem .5rem;
-    font-size: 1.3rem;
-    background: #421212;
-    border: 2px solid #2b0606;
+    width: 15rem;
+    padding: 0.5rem 1rem;
+    font-size: 2rem;
+    background: rgba(171, 26, 26, 0.523);
+    /* Fondo semitransparente */
+    border: 2px solid rgba(43, 6, 6, 0.5);
     border-radius: 8px;
     cursor: pointer;
-    transition: background 0.3s;
-    box-shadow: 0px 5px 25px rgba(0, 0, 0, 0.824);
+    transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.2);
+    text-align: center;
+    backdrop-filter: blur(8px);
+    /* Efecto Glass */
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .game-over-button:hover {
-    background: #952b2b;
-    box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.824);
+    background: rgba(207, 6, 6, 0.652);
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.9), inset 0 0 10px rgba(255, 255, 255, 0.3);
 }
 
 .modal-buttons button {
@@ -1098,4 +1165,18 @@ html {
     border: none;
     border-radius: 4px;
     cursor: pointer;
+}
+
+.victory-rules {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: .3rem;
+    width: 100%;
+    padding: 1rem;
+    /* background: rgba(0, 0, 0, 0.8); */
+    border-radius: 10px;
+    z-index: 100;
+    text-align: left;
 }
