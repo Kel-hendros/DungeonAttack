@@ -366,6 +366,7 @@ function attackMonsterUnarmed(card) {
 
   // Daño base del monstruo, mitigado por la Fuerza del jugador
   let remainingDamage = card.value - gameState.playerStats.strength;
+  console.log("Fuerza del jugador:", gameState.playerStats.strength);
   if (remainingDamage < 0) remainingDamage = 0;
   message += `que ataca con fuerza <strong>${card.value}</strong>. `;
   if (gameState.playerStats.strength > 0) {
@@ -454,16 +455,13 @@ export async function castSpell(spellCard) {
   );
 
   // Calcular el maná efectivo: al menos igual a la Inteligencia del jugador.
-  const effectiveMana = Math.max(
-    gameState.mana,
-    gameState.playerStats.intelligence
-  );
+  const effectiveMana = gameState.mana + gameState.playerStats.intelligence;
   console.log(
     "Maná acumulado:",
     gameState.mana,
-    "Inteligencia:",
+    ", Inteligencia:",
     gameState.playerStats.intelligence,
-    "Maná efectivo:",
+    ", Maná efectivo:",
     effectiveMana
   );
 

@@ -82,7 +82,7 @@ export const decks = {
       weapon: 12,
       armor: 5,
       potion: 10,
-      spell: 3,
+      spell: 6,
     },
   },
   // Podés definir más decks para niveles superiores
