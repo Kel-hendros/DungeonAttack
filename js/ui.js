@@ -434,7 +434,7 @@ export function showModal(modalType, options = {}, canUseWeapon) {
     function showAnalysis(chosenValue, attackIcon) {
       let finalDamage = monsterValue - chosenValue - armorValue;
       if (finalDamage < 0) finalDamage = 0;
-      battleAnalysisEl.textContent = `💀 ${monsterValue} - ${attackIcon} ${chosenValue} - 🛡️ ${armorValue} = Recibes ${finalDamage} daños!`;
+      battleAnalysisEl.textContent = `💀 ${monsterValue} - (${attackIcon} ${chosenValue} + 🛡️ ${armorValue}) = Recibes ${finalDamage} daños!`;
 
       if (gameState.playerHealth.current - finalDamage <= 0) {
         battleAnalysisEl.textContent += " 🪦 ";
