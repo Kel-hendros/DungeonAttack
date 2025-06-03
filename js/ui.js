@@ -508,7 +508,7 @@ export function showModal(modalType, options = {}, canUseWeapon) {
 
     //calcular y mostrar la salud o el mana incrementados
     function showAnalysis(chosenValue, type) {
-      //finalHealth can not be abovev playerMaxHealth
+      // finalHealth cannot exceed playerMaxHealth
       let finalHealth = potionHealthValue + playerHealth;
       if (finalHealth > playerMaxHealth) finalHealth = playerMaxHealth;
       let finalMana = potionManaValue + playerMana;
