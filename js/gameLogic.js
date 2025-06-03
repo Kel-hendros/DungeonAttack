@@ -534,7 +534,7 @@ export function logAction(message) {
   // Agregar el mensaje al log
   gameState.log.push(message);
   // si hay mas de 5, eliminar el mas antiguo
-  if (gameState.log.lenght > 5) {
+  if (gameState.log.length > 5) {
     gameState.log.shift();
   }
   // Actualizar la UI del log
