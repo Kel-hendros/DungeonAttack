@@ -822,7 +822,7 @@ export function showVictoryModal() {
 
   modalContent.innerHTML = `
   <div class="game-over-title">
-    <h3>⚜️ ¡Victória! ⚜️</h3>
+    <h3>⚜️ ¡Victoria! ⚜️</h3>
   </div>
     <div class="game-over-stats">
     Dificultad del Dungeon completado: ${gameState.deckTier}
