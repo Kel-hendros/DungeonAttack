@@ -364,9 +364,13 @@ function attackMonsterUnarmed(card) {
   // Mensaje base de enfrentamiento
   let message = `Te enfrentas a mano limpia con un horrible monstruo: <strong>${card.name}</strong>, `;
 
-  // Daño base del monstruo
-  let remainingDamage = card.value;
+  // Daño base del monstruo, mitigado por la Fuerza del jugador
+  let remainingDamage = card.value - gameState.playerStats.strength;
+  if (remainingDamage < 0) remainingDamage = 0;
   message += `que ataca con fuerza <strong>${card.value}</strong>. `;
+  if (gameState.playerStats.strength > 0) {
+    message += `Tu fuerza reduce el daño en <strong>${gameState.playerStats.strength}</strong>. `;
+  }
 
   // Si hay armadura equipada y valor de protección disponible:
   if (gameState.playerEquipment.armor && gameState.currentArmorValue > 0) {
