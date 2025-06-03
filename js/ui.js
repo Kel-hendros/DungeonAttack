@@ -542,7 +542,7 @@ export function showModal(modalType, options = {}, canUseWeapon) {
   modal.style.display = "flex";
   const closeModalBtn = modalContent.querySelector("#closeModal");
 
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     // Get all option elements within the modal content
     const optionElements = modalContent.querySelectorAll(".option");
     // Iterate over each option element
