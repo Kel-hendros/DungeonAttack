@@ -1,5 +1,5 @@
 import { loadGameState, resetGameState, gameState } from "./gameState.js";
-import { cardData } from "../data/cards.js";
+import { cardData, getDifficultyTarget } from "../data/cards.js";
 import {
   processCard,
   generateRoomCards,
@@ -931,10 +931,13 @@ function showDeckCompositionModal() {
       </div>`;
   });
 
+  const tier = gameState.deckTier;
+  const difficulty = getDifficultyTarget(tier);
+
   modalContent.innerHTML = `
     <div id="closeModal" class="close-modal"><span>X</span></div>
     <h3>Composición del Mazo</h3>
-    <div class="deck-comp-subtitle">${deck.length} cartas restantes</div>
+    <div class="deck-comp-subtitle">Tier ${tier} — Dificultad ${difficulty} — ${deck.length} cartas restantes</div>
     <div class="deck-composition-list">
       ${compositionHTML}
     </div>
