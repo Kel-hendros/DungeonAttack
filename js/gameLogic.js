@@ -100,7 +100,7 @@ function shuffleArray(array) {
 }
 
 // Función para remover una carta del room por su índice
-export function removeCard(cardIndex) {
+export async function removeCard(cardIndex) {
   // Marcar la posición como vacía sin modificar la longitud del array.
   gameState.currentRoomCards[cardIndex] = null;
   // Actualizamos cardsRemaining contando solo las cartas que no son null.
@@ -112,7 +112,7 @@ export function removeCard(cardIndex) {
   if (gameState.cardsRemaining <= 1) {
     nextRoom();
   }
-  checkDungeonVictory();
+  await checkDungeonVictory();
 
   return gameState.currentRoomCards;
 }
@@ -145,7 +145,6 @@ export function nextRoom() {
   gameState.cardsRemaining = gameState.currentRoomCards.filter(
     (card) => card !== null
   ).length;
-  gameState.newRoom = true;
   saveGameState();
   return gameState.currentRoomCards;
 }
@@ -244,7 +243,7 @@ export async function processCard(index) {
         break;
     }
     if (actionProcessed) {
-      removeCard(index);
+      await removeCard(index);
       saveGameState();
     }
   } catch (error) {
@@ -432,6 +431,8 @@ function usePotion(card) {
       `Usaste la poción ${card.name}. Salud actual: ${gameState.playerHealth.current}`
     );
   }
+  // Movemos la poción a la pila de descarte.
+  gameState.discardPile.push(card);
   logAction(message);
   return true;
 }
@@ -477,6 +478,8 @@ export async function castSpell(spellCard) {
   // El daño del hechizo es igual al maná efectivo.
   const damage = effectiveMana;
   gameState.mana = 0;
+  // Descartamos el hechizo tras lanzarlo exitosamente
+  gameState.discardPile.push(spellCard);
   console.log("Daño del hechizo:", damage, "Mana ahora:", gameState.mana);
   message += `, haciendo tanto daño a cada uno como Maná tienes acumulado: <strong>${effectiveMana}</strong>.`;
 
@@ -621,56 +624,46 @@ function proceedToNextDungeon() {
   console.log("¡Listo para el siguiente dungeon!");
 }
 
-async function resetRun() {
-  return new Promise((resolve) => {
-    // Reseteamos la salud y mana para el nuevo dungeon
+function resetRun() {
+  // Reseteamos la salud y mana para el nuevo dungeon
 
-    if (gameState.playerStats.constitution > 0) {
-      gameState.playerHealth.max =
-        gameState.playerHealth.base + gameState.playerStats.constitution * 5;
-    } else {
-      gameState.playerHealth.max = gameState.playerHealth.base;
-    }
+  if (gameState.playerStats.constitution > 0) {
+    gameState.playerHealth.max =
+      gameState.playerHealth.base + gameState.playerStats.constitution * 5;
+  } else {
+    gameState.playerHealth.max = gameState.playerHealth.base;
+  }
 
-    gameState.playerHealth.current = gameState.playerHealth.max;
-    gameState.mana = 0;
-    console.log("Salud máxima actualizada:", gameState.playerHealth.max);
+  gameState.playerHealth.current = gameState.playerHealth.max;
+  gameState.mana = 0;
+  console.log("Salud máxima actualizada:", gameState.playerHealth.max);
 
-    // Se vacían los equipamientos y se reinicia el valor actual de armadura
-    gameState.playerEquipment = {
-      weapon: null,
-      armor: null,
-      potion: null,
-    };
-    gameState.newEquipment = {
-      weapon: false,
-      armor: false,
-      potion: false,
-    };
-    gameState.weaponDefeatedMonsters = [];
-    gameState.currentArmorValue = 0;
+  // Se vacían los equipamientos y se reinicia el valor actual de armadura
+  gameState.playerEquipment = {
+    weapon: null,
+    armor: null,
+    potion: null,
+  };
+  gameState.newEquipment = {
+    weapon: false,
+    armor: false,
+    potion: false,
+  };
+  gameState.weaponDefeatedMonsters = [];
+  gameState.currentArmorValue = 0;
 
-    // Se reinician los mazos y la habitación
-    gameState.currentRoomCards = [];
-    gameState.dungeonDeck = [];
-    gameState.cardsRemaining = 0;
-    gameState.discardPile = [];
-    gameState.newIndexes = [];
+  // Se reinician los mazos y la habitación
+  gameState.currentRoomCards = [];
+  gameState.dungeonDeck = [];
+  gameState.cardsRemaining = 0;
+  gameState.discardPile = [];
+  gameState.newIndexes = [];
 
-    // Reiniciamos banderas y log
-    gameState.inTargetSelection = false;
-    gameState.log = [];
+  // Reiniciamos banderas y log
+  gameState.inTargetSelection = false;
+  gameState.log = [];
 
-    //console log all player stats
-    console.log(gameState.playerStats);
-    console.log(gameState.playerHealth);
-    console.log(gameState.mana);
-    console.log(gameState.playerEquipment);
-    console.log(gameState.newEquipment);
-
-    console.log("Reset de datos volatiles completado.");
-    resolve();
-  });
+  console.log("Reset de datos volatiles completado.");
 }
 
 export function runFromRoom() {

@@ -481,8 +481,7 @@ export function showModal(modalType, options = {}, canUseWeapon) {
     const potionHealthValue = options.potionCard.value;
     const potionManaValue = options.potionCard.value;
     const playerHealth = gameState.playerHealth.current;
-    const playerMaxHealth =
-      gameState.playerHealth.max + gameState.playerStats.constitution * 5;
+    const playerMaxHealth = gameState.playerHealth.max;
     const playerMana = gameState.mana + gameState.playerStats.intelligence;
 
     modalContent.innerHTML = `
@@ -849,7 +848,7 @@ export function showVictoryModal() {
     <div class="option" data-value="intelligence">
       ${drawCard(intelligenceCard, 0, "equipped", true)}
     </div>
-      
+    </div>
   `;
 
   modal.style.display = "flex";
