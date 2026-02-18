@@ -1,4 +1,4 @@
-import { cardData, decks } from "../data/cards.js";
+import { cardData, decks, getScaledComposition } from "../data/cards.js";
 import { saveGameState } from "./gameState.js";
 import { gameState } from "./gameState.js";
 import { showModal, showGameOverModal, showVictoryModal } from "./ui.js";
@@ -16,7 +16,8 @@ export function initializeDungeonDeck() {
   console.log("Inicializando mazo del dungeon...");
   const deckDefinition = decks[gameState.deckKey];
   let fullDeck = [];
-  const composition = deckDefinition.composition;
+  const composition = getScaledComposition(gameState.deckKey, gameState.deckTier);
+  console.log("Composición del mazo (tier " + gameState.deckTier + "):", composition);
 
   // Generar el mazo completo basado en la composición
   Object.keys(composition).forEach((type) => {
