@@ -1,4 +1,4 @@
-import { cardData, decks, getScaledComposition } from "../data/cards.js";
+import { cardData, decks, getScaledComposition, getDifficultyTarget } from "../data/cards.js";
 import { saveGameState } from "./gameState.js";
 import { gameState } from "./gameState.js";
 import { showModal, showGameOverModal, showVictoryModal } from "./ui.js";
@@ -12,55 +12,125 @@ function generateUniqueId() {
 }
 
 export function initializeDungeonDeck() {
-  // console log para verificar que se está generando el mazo
   console.log("Inicializando mazo del dungeon...");
-  const deckDefinition = decks[gameState.deckKey];
   let fullDeck = [];
   const composition = getScaledComposition(gameState.deckKey, gameState.deckTier);
+  const difficultyTarget = getDifficultyTarget(gameState.deckTier);
   console.log("Composición del mazo (tier " + gameState.deckTier + "):", composition);
+  console.log("Objetivo de dificultad:", difficultyTarget);
 
-  // Generar el mazo completo basado en la composición
-  Object.keys(composition).forEach((type) => {
+  // Paso 1: Construir las cartas positivas (armas, armaduras, pociones, hechizos)
+  const positiveTypes = ["weapon", "armor", "potion", "spell"];
+  positiveTypes.forEach((type) => {
     const count = composition[type];
-    // Filtrar cartas disponibles que cumplan con el tier actual
     const availableCards = cardData[type].filter(
       (card) => card.tier <= gameState.deckTier
     );
-
-    // Si el número de cartas requeridas es mayor o igual que las únicas disponibles,
-    // primero agregamos todas las cartas únicas.
-    if (availableCards.length <= count) {
-      availableCards.forEach((card) => {
-        const newCard = { ...card, instanceId: generateUniqueId() };
-        fullDeck.push(newCard);
-      });
-      // Luego, completamos el resto de las cartas faltantes con selecciones al azar
-      const remaining = count - availableCards.length;
-      for (let i = 0; i < remaining; i++) {
-        const randomIndex = Math.floor(Math.random() * availableCards.length);
-        const newCard = {
-          ...availableCards[randomIndex],
-          instanceId: generateUniqueId(),
-        };
-        fullDeck.push(newCard);
-      }
-    } else {
-      // Si hay más cartas únicas disponibles de las que necesitamos,
-      // elegimos aleatoriamente 'count' de ellas, asegurando que sean únicas.
-      const shuffled = shuffleArray(availableCards.slice());
-      for (let i = 0; i < count; i++) {
-        const newCard = { ...shuffled[i], instanceId: generateUniqueId() };
-        fullDeck.push(newCard);
-      }
-    }
+    fillCardSlots(fullDeck, availableCards, count);
   });
+
+  // Paso 2: Calcular la suma de valores positivos
+  const positiveSum = fullDeck.reduce((sum, card) => sum + card.value, 0);
+  console.log("Suma de cartas positivas:", positiveSum);
+
+  // Paso 3: Calcular la suma objetivo de monstruos
+  const targetMonsterSum = difficultyTarget + positiveSum;
+  const monsterCount = composition.monster;
+  console.log("Suma objetivo de monstruos:", targetMonsterSum, "para", monsterCount, "monstruos");
+
+  // Paso 4: Llenar los slots de monstruos con selección ponderada hacia el objetivo
+  const availableMonsters = cardData.monster.filter(
+    (card) => card.tier <= gameState.deckTier
+  );
+  fillMonsterSlots(fullDeck, availableMonsters, monsterCount, targetMonsterSum);
 
   // Mezclar el mazo completo
   fullDeck = shuffleArray(fullDeck);
-  // Actualizar el estado con el mazo completo
   gameState.dungeonDeck = fullDeck;
   gameState.cardsRemaining = fullDeck.length;
+
+  // Log de dificultad real alcanzada
+  const actualMonsterSum = fullDeck
+    .filter((c) => c.type === "monster")
+    .reduce((s, c) => s + c.value, 0);
+  console.log(
+    "Dificultad real:",
+    actualMonsterSum - positiveSum,
+    "(objetivo: " + difficultyTarget + ")"
+  );
+
   return fullDeck;
+}
+
+// Llena slots con cartas del pool disponible (para cartas positivas)
+function fillCardSlots(deck, availableCards, count) {
+  if (availableCards.length <= count) {
+    availableCards.forEach((card) => {
+      deck.push({ ...card, instanceId: generateUniqueId() });
+    });
+    const remaining = count - availableCards.length;
+    for (let i = 0; i < remaining; i++) {
+      const randomIndex = Math.floor(Math.random() * availableCards.length);
+      deck.push({ ...availableCards[randomIndex], instanceId: generateUniqueId() });
+    }
+  } else {
+    const shuffled = shuffleArray(availableCards.slice());
+    for (let i = 0; i < count; i++) {
+      deck.push({ ...shuffled[i], instanceId: generateUniqueId() });
+    }
+  }
+}
+
+// Llena los slots de monstruos usando selección ponderada para alcanzar targetSum.
+// Primero agrega todos los monstruos únicos, luego llena duplicados
+// priorizando valores cercanos al promedio ideal restante.
+function fillMonsterSlots(deck, availableMonsters, count, targetSum) {
+  const selected = [];
+
+  // Agregar todos los monstruos únicos (garantiza variedad)
+  if (availableMonsters.length <= count) {
+    availableMonsters.forEach((m) => selected.push(m));
+  } else {
+    // Más únicos que slots: elegir aleatoriamente
+    const shuffled = shuffleArray(availableMonsters.slice());
+    for (let i = 0; i < count; i++) {
+      selected.push(shuffled[i]);
+    }
+    selected.forEach((m) => deck.push({ ...m, instanceId: generateUniqueId() }));
+    return;
+  }
+
+  // Llenar slots restantes con selección ponderada
+  let currentSum = selected.reduce((s, m) => s + m.value, 0);
+  const remaining = count - selected.length;
+
+  for (let i = 0; i < remaining; i++) {
+    const slotsLeft = remaining - i;
+    const deficit = targetSum - currentSum;
+    const idealAvg = deficit / slotsLeft;
+
+    // Ponderar monstruos por proximidad al promedio ideal
+    const weights = availableMonsters.map(
+      (m) => 1 / (1 + Math.abs(m.value - idealAvg))
+    );
+    const totalWeight = weights.reduce((s, w) => s + w, 0);
+
+    // Selección aleatoria ponderada
+    let roll = Math.random() * totalWeight;
+    let picked = availableMonsters[0];
+    for (let j = 0; j < availableMonsters.length; j++) {
+      roll -= weights[j];
+      if (roll <= 0) {
+        picked = availableMonsters[j];
+        break;
+      }
+    }
+
+    selected.push(picked);
+    currentSum += picked.value;
+  }
+
+  selected.forEach((m) => deck.push({ ...m, instanceId: generateUniqueId() }));
 }
 
 export function generateRoomCards() {

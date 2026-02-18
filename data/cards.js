@@ -113,3 +113,10 @@ export function getScaledComposition(deckKey, currentTier) {
     spell: base.spell,
   };
 }
+
+// Objetivo de dificultad por tier.
+// dificultad = Σ monstruos - Σ (armas + armaduras + pociones)
+// Tier 1: 15, Tier 2: 35, Tier 3: 55, etc.
+export function getDifficultyTarget(tier) {
+  return 15 + (tier - 1) * 20;
+}
