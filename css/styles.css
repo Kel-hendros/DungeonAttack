@@ -1167,6 +1167,92 @@ html {
     cursor: pointer;
 }
 
+/* Deck Composition Modal */
+.deck-comp-subtitle {
+    font-size: 1.1rem;
+    color: #ccc;
+    margin-bottom: 0.25rem;
+}
+
+.deck-composition-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    width: 100%;
+    max-height: 380px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.deck-comp-group {
+    width: 100%;
+}
+
+.deck-comp-type-header {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #f0c040;
+    border-bottom: 1px solid rgba(240, 192, 64, 0.3);
+    padding-bottom: 0.2rem;
+    margin-bottom: 0.3rem;
+}
+
+.deck-comp-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.deck-comp-card {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.95rem;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.deck-comp-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.deck-comp-value {
+    min-width: 1.8rem;
+    text-align: center;
+    font-weight: bold;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
+    padding: 0.1rem 0.3rem;
+}
+
+.deck-comp-name {
+    flex: 1;
+    color: #ddd;
+}
+
+.deck-comp-count {
+    color: #aaa;
+    font-weight: bold;
+    min-width: 2rem;
+    text-align: right;
+}
+
+.deck-composition-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.deck-composition-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.deck-composition-list::-webkit-scrollbar-thumb {
+    background: rgba(240, 192, 64, 0.4);
+    border-radius: 3px;
+}
+
 .victory-rules {
     display: flex;
     flex-direction: column;

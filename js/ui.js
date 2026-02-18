@@ -159,6 +159,14 @@ function drawDungeon() {
       runFromRoom();
     });
   }
+
+  const deckPile = document.querySelector(".deck-pile");
+  if (deckPile) {
+    deckPile.style.cursor = "pointer";
+    deckPile.addEventListener("click", () => {
+      showDeckCompositionModal();
+    });
+  }
 }
 
 function drawRoom() {
@@ -867,5 +875,75 @@ export function showVictoryModal() {
         resolve(chosenStat);
       });
     });
+  });
+}
+
+function showDeckCompositionModal() {
+  const modal = document.getElementById("gameModal");
+  const modalContent = document.getElementById("modalContent");
+  const deck = gameState.dungeonDeck;
+
+  if (deck.length === 0) return;
+
+  // Agrupar cartas por tipo y luego por nombre, ordenando por value
+  const typeLabels = {
+    monster: { label: "Monstruos", emoji: "💀" },
+    weapon: { label: "Armas", emoji: "⚔️" },
+    armor: { label: "Armaduras", emoji: "🛡️" },
+    potion: { label: "Pociones", emoji: "🏺" },
+    spell: { label: "Hechizos", emoji: "🔮" },
+  };
+
+  const grouped = {};
+  deck.forEach((card) => {
+    if (!grouped[card.type]) grouped[card.type] = {};
+    const key = card.id;
+    if (!grouped[card.type][key]) {
+      grouped[card.type][key] = { ...card, count: 0 };
+    }
+    grouped[card.type][key].count++;
+  });
+
+  // Construir HTML por tipo
+  let compositionHTML = "";
+  const typeOrder = ["monster", "weapon", "armor", "potion", "spell"];
+
+  typeOrder.forEach((type) => {
+    if (!grouped[type]) return;
+    const info = typeLabels[type] || { label: type, emoji: "❓" };
+    const cards = Object.values(grouped[type]).sort((a, b) => a.value - b.value);
+    const totalOfType = cards.reduce((sum, c) => sum + c.count, 0);
+
+    let cardsHTML = "";
+    cards.forEach((card) => {
+      cardsHTML += `
+        <div class="deck-comp-card">
+          <span class="deck-comp-value">${card.value}</span>
+          <span class="deck-comp-name">${card.name}</span>
+          <span class="deck-comp-count">x${card.count}</span>
+        </div>`;
+    });
+
+    compositionHTML += `
+      <div class="deck-comp-group">
+        <div class="deck-comp-type-header">${info.emoji} ${info.label} (${totalOfType})</div>
+        <div class="deck-comp-cards">${cardsHTML}</div>
+      </div>`;
+  });
+
+  modalContent.innerHTML = `
+    <div id="closeModal" class="close-modal"><span>X</span></div>
+    <h3>Composición del Mazo</h3>
+    <div class="deck-comp-subtitle">${deck.length} cartas restantes</div>
+    <div class="deck-composition-list">
+      ${compositionHTML}
+    </div>
+  `;
+
+  modal.style.display = "flex";
+
+  const closeModalBtn = modalContent.querySelector("#closeModal");
+  closeModalBtn.addEventListener("click", () => {
+    modal.style.display = "none";
   });
 }
